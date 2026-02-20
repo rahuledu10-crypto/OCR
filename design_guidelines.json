@@ -1,0 +1,152 @@
+{
+  "brand_identity": {
+    "name": "OCR_API_System",
+    "persona": "E1: The Anti-AI Designer",
+    "tone": "Precision, Trust, Developer-Centric, High-Performance",
+    "theme_mode": "dark",
+    "archetype": "The Performance Pro (Obsidian + Electric)"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Manrope, sans-serif",
+      "weights": ["600", "700", "800"],
+      "letter_spacing": "tracking-tight",
+      "usage": "Use for all H1-H3. H1 should be text-5xl or larger on landing."
+    },
+    "body": {
+      "font_family": "IBM Plex Sans, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Standard text. Use text-base or text-sm for dashboard density."
+    },
+    "code": {
+      "font_family": "JetBrains Mono, monospace",
+      "weights": ["400"],
+      "usage": "API snippets, keys, logs, JSON responses."
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "default": "#030712",
+        "card": "#111827",
+        "surface": "#1f2937"
+      },
+      "primary": {
+        "DEFAULT": "#6366f1",
+        "foreground": "#ffffff",
+        "glow": "0 0 20px rgba(99, 102, 241, 0.5)"
+      },
+      "accent": {
+        "DEFAULT": "#10b981",
+        "glow": "0 0 15px rgba(16, 185, 129, 0.4)"
+      },
+      "text": {
+        "primary": "#f9fafb",
+        "secondary": "#9ca3af",
+        "muted": "#4b5563"
+      },
+      "border": {
+        "default": "#1f2937",
+        "active": "#374151"
+      }
+    },
+    "gradients": {
+      "hero_glow": "radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%)",
+      "card_surface": "linear-gradient(180deg, rgba(31, 41, 55, 0.4) 0%, rgba(17, 24, 39, 0.8) 100%)"
+    }
+  },
+  "layout_strategy": {
+    "landing_page": {
+      "grid_type": "Mode A: Tetris Grid",
+      "spacing": "gap-8 md:gap-12",
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "rules": [
+        "Use asymmetry in feature showcases.",
+        "Hero section must overlap with the navigation visually (glassmorphism).",
+        "Use 'sticky' scrolling for code examples vs feature list."
+      ]
+    },
+    "dashboard": {
+      "grid_type": "Mode B: High Density Bento",
+      "spacing": "gap-4",
+      "sidebar": "Fixed width (250px), collapsible.",
+      "rules": [
+        "100% height utilization for widgets.",
+        "No scrollbars within widgets unless absolutely necessary.",
+        "Use 'subgrid' for alignment across cards if supported, else precise flex columns."
+      ]
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] transition-all duration-300 rounded-md font-medium tracking-wide",
+      "secondary": "bg-transparent border border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white transition-colors rounded-md",
+      "ghost": "text-gray-400 hover:text-white hover:bg-white/5 rounded-md"
+    },
+    "cards": {
+      "style": "Glassmorphism with Noise",
+      "classes": "bg-gray-900/40 backdrop-blur-xl border border-white/10 shadow-xl rounded-xl",
+      "hover": "hover:border-primary/30 hover:bg-gray-900/60 transition-all duration-300 group"
+    },
+    "inputs": {
+      "style": "Minimalist Tech",
+      "classes": "bg-gray-950/50 border border-gray-800 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-md h-10 px-3 text-sm placeholder:text-gray-600 transition-all"
+    }
+  },
+  "motion": {
+    "libraries": [
+      "framer-motion",
+      "lenis"
+    ],
+    "animations": {
+      "page_load": "opacity: 0, y: 20 -> opacity: 1, y: 0 (staggered)",
+      "hover_card": "y: -4, shadow: lg",
+      "scanning_beam": "absolute top-0 w-full h-[2px] bg-accent shadow-[0_0_10px_#10b981] animate-scan"
+    },
+    "instructions": "Use framer-motion for all entrance animations. Use CSS keyframes for continuous loops (like scanning beams)."
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "hero_background",
+        "url": "https://images.pexels.com/photos/17483870/pexels-photo-17483870.png",
+        "description": "Abstract digital neural network, dark theme. Use as background with overlay.",
+        "placement": "Landing Page Hero Section Background"
+      },
+      {
+        "category": "developer_coding",
+        "url": "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg",
+        "description": "Close up of code on screen in dark room.",
+        "placement": "Developer Experience / API Docs Section"
+      },
+      {
+        "category": "security",
+        "url": "https://images.pexels.com/photos/9783348/pexels-photo-9783348.jpeg",
+        "description": "Person with digital projection/security vibe.",
+        "placement": "Security & Compliance Section"
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px, size 20px for UI, 24px for navigation."
+    }
+  },
+  "universal_guidelines": [
+    "Do not use gradients for text unless it's a very subtle shine effect.",
+    "Avoid 'Inter' font for headings. Use Manrope.",
+    "Interactive elements must have a defined hover state that increases brightness or contrast.",
+    "Dashboards must be dense. Avoid wasting space with large paddings in data tables.",
+    "Use 'sonner' for all toast notifications.",
+    "Ensure all inputs have clear focus states (ring/border color change).",
+    "Use data-testid attributes for all interactive elements."
+  ],
+  "instructions_to_main_agent": [
+    "1. Install 'framer-motion' and 'lenis' immediately.",
+    "2. Configure Tailwind with the provided colors in 'colors.palette'.",
+    "3. Set up the font families in 'index.css' importing from Google Fonts.",
+    "4. Create a 'Layout' component that wraps the app with Lenis scroll.",
+    "5. For the 'Scanning' effect in the hero, create a custom component using Framer Motion that moves a gradient line over a mock ID card.",
+    "6. Build the Dashboard using a Sidebar Layout (fixed left, scrollable right).",
+    "7. Use the provided image URLs for the specific sections mentioned."
+  ]
+}
