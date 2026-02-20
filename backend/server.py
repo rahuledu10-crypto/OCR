@@ -131,7 +131,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def generate_api_key() -> str:
     return f"ocr_{secrets.token_urlsafe(32)}"
 
-async def validate_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
+async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="X-API-Key header is required")
+    
     api_key = await db.api_keys.find_one({"key": x_api_key, "is_active": True}, {"_id": 0})
     if not api_key:
         raise HTTPException(status_code=401, detail="Invalid or inactive API key")
