@@ -28,7 +28,7 @@ db = client[os.environ.get('DB_NAME', 'ocr_api_db')]
 # JWT Configuration
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key')
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24
+JWT_EXPIRATION_HOURS = 72  # 3 days for better UX
 
 # Create the main app
 app = FastAPI(title="OCR API System", version="1.0.0")
