@@ -337,57 +337,61 @@ async def single_extraction(image_base64: str, document_type: Optional[str], api
     """Single extraction pass with different prompts based on pass number"""
     
     if pass_num == 1:
-        system_prompt = """You are an expert OCR system for Indian identity documents.
+        system_prompt = """You are an expert OCR system for Indian Aadhaar cards.
 
-AADHAAR CARD EXTRACTION:
-The Aadhaar number is a 12-digit number, usually printed in LARGE BOLD font at the BOTTOM of the card, just above the red/maroon line.
+TASK: Extract the 12-digit Aadhaar number from the card.
 
-FORMAT: XXXX XXXX XXXX (4 digits, space, 4 digits, space, 4 digits)
+LOCATION: Look at the BOTTOM of the card - there is a large 12-digit number printed in BOLD just ABOVE the red/maroon horizontal line. This is the Aadhaar number.
 
-CRITICAL - These digits look similar in poor quality images:
-- 5 and 9: The digit 5 has a FLAT horizontal top. The digit 9 has a ROUND circular top.
-- 3 and 8: The digit 3 is OPEN on the left. The digit 8 is CLOSED with two loops.
-- 0 and 6: The digit 0 is a simple OVAL. The digit 6 has a CURVED TAIL going up on the left.
-- 2 and 7: The digit 2 has a CURVED top. The digit 7 has a STRAIGHT horizontal top.
+FORMAT: XXXX XXXX XXXX
 
-Look at the Aadhaar number in the image. Read EACH digit carefully.
+CRITICAL DIGIT RECOGNITION:
+- Look at each digit's SHAPE very carefully
+- In blurry images: 0 and 9 look similar. 0 is a closed oval. 9 has a stem going down.
+- The digit 5 has a FLAT TOP with right angle. Do not confuse with 9.
+- The digit 3 is OPEN on the left side
+- The digit 6 has a CURLED TAIL
 
-Return JSON with: document_type, extracted_data (including aadhaar_number), confidence"""
+Read the number carefully and return JSON:
+{"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
     
     elif pass_num == 2:
-        # Pass 2: Character-by-character with position awareness
-        system_prompt = """You are reading the Aadhaar number from an Indian Aadhaar card.
+        system_prompt = """DIGIT-BY-DIGIT Aadhaar extraction.
 
-LOCATION: The 12-digit number at the BOTTOM of the card, above the red line.
+Look at the 12 large digits at the bottom of this Aadhaar card (above red line).
 
-READ EACH DIGIT POSITION BY POSITION:
-Position 1 (leftmost): What digit? Look carefully - if it has a flat top it's 5, round top is 9
-Position 2: What digit?
-Position 3: What digit? If open on left it's 3, if closed loops it's 8
-Position 4: What digit?
-[space]
-Position 5: What digit?
-Position 6: What digit?
-Position 7: What digit?
-Position 8: What digit?
-[space]
-Position 9: What digit?
-Position 10: What digit?
-Position 11: What digit?
-Position 12: What digit?
+For EACH position, identify the digit:
 
-IMPORTANT: In blurry images, 5 is often misread as 9. Check the TOP of the digit - FLAT = 5, ROUND = 9.
+FIRST GROUP (positions 1-4):
+- Digit 1: Describe what you see - is the top flat (5) or curved (9)?
+- Digit 2: What is it? Note: 9 has a circle with tail down, 0 is just oval
+- Digit 3: Is it open on left (3) or has closed loops (8)?
+- Digit 4: What digit?
 
-Return: {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
+SECOND GROUP (positions 5-8):
+- Digits 5-8: What are they?
+
+THIRD GROUP (positions 9-12):
+- Digits 9-12: What are they?
+
+Output ONLY JSON:
+{"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
     
     else:
-        # Pass 3: Final verification with explicit alternatives
-        system_prompt = """FINAL VERIFICATION of Aadhaar number.
+        # Pass 3: Re-examine with fresh perspective
+        system_prompt = """VERIFICATION PASS - Read the Aadhaar number again.
 
-Look at the 12-digit number at the bottom of the card.
+The 12-digit number at the bottom of this Aadhaar card.
 
-For EACH digit that looks unclear, consider these common confusions:
-- Could that 9 actually be a 5? (5 has flat top)
+IMPORTANT CORRECTIONS - Previous readings may have these errors:
+- 0 instead of 9: Look again - does it have a tail going down? Then it's 9.
+- 9 instead of 5: Look at the top - if FLAT and angular, it's 5.
+- 2 instead of 7: Check for horizontal stroke at top.
+
+Read each digit fresh. Don't assume previous readings were correct.
+
+Output JSON:
+{"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
 - Could that 0 actually be a 6? (6 has tail)
 - Could that 8 actually be a 3? (3 is open on left)
 - Could that 2 actually be a 7? (7 has straight top)
