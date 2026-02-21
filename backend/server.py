@@ -371,34 +371,18 @@ Return JSON with your final answer."""
             system_message=system_prompt
         ).with_model("openai", "gpt-5.2")
         
-        if pass_num == 1:
-            prompt = """Look at this Aadhaar card image.
-Find the 12-digit Aadhaar number at the bottom of the card (large digits above the red line).
-Read each digit carefully. Remember: 5 has flat top, 9 has round top.
-Return the extracted data as JSON."""
-        elif pass_num == 2:
-            prompt = """DIGIT-BY-DIGIT EXTRACTION:
-
-Look at the large 12-digit number at the bottom of this Aadhaar card.
-
-Read position by position from left to right.
-For the FIRST digit: Does it have a FLAT top (=5) or ROUND top (=9)?
-For any digit that could be 3 or 8: Is it OPEN on left (=3) or CLOSED loops (=8)?
-
-Output the 12 digits in format XXXX XXXX XXXX."""
-        else:
-            prompt = """VERIFICATION PASS:
-
-Look at the Aadhaar number one more time.
-The first group of 4 digits - read each one carefully.
-Especially check: Is the first digit a 5 (flat top) or 9 (round top)?
-
-Output your final answer."""
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"ocr_pass{pass_num}_{uuid.uuid4()}",
+            system_message=system_prompt
+        ).with_model("openai", "gpt-5.2")
         
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(text=prompt, file_contents=[image_content])
         
         response = await chat.send_message(user_message)
+        logging.info(f"Pass {pass_num} raw response: {response[:200] if response else 'None'}...")
         
         json_match = re.search(r'\{[\s\S]*\}', response)
         if json_match:
