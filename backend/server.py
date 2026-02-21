@@ -510,99 +510,19 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
     best_result = max([result1, result2, result3], key=lambda r: r.get("confidence", 0))
     best_result["extraction_method"] = "triple_pass_best_confidence"
     return best_result
+
+# ========== MAIN OCR FUNCTION ==========
+
+async def extract_document_info(image_base64: str, document_type: Optional[str] = None) -> Dict[str, Any]:
+    """Extract information from document image using multi-pass verification"""
     
-    system_prompt = """You are an expert OCR system specialized in extracting information from Indian identity documents.
-Your extractions must be PRECISE and follow exact formats.
-
-CRITICAL RULES:
-1. Only extract text you can clearly read - never guess or hallucinate
-2. If a field is unclear or partially visible, mark it as "unclear" 
-3. Verify numbers by checking digit count before outputting
-4. For confidence: 0.9+ only if ALL fields are clearly readable
-
-AADHAAR CARD - Required fields:
-- aadhaar_number: EXACTLY 12 digits (format: XXXX XXXX XXXX). Count digits carefully!
-- name: Full name in CAPITAL LETTERS as shown
-- date_of_birth: DD/MM/YYYY format only
-- gender: "Male" or "Female" only
-- address: Complete address if visible, else "not visible"
-
-PAN CARD - Required fields:
-- pan_number: EXACTLY 10 characters (format: ABCDE1234F - 5 letters, 4 digits, 1 letter)
-- name: Full name as shown
-- father_name: Father's name as shown
-- date_of_birth: DD/MM/YYYY format
-
-DRIVING LICENSE - Required fields:
-- dl_number: Full license number with state code (e.g., MH0220190001234)
-- name: Full name as shown
-- date_of_birth: DD/MM/YYYY format
-- issue_date: Issue date if visible
-- validity: Valid until date (DD/MM/YYYY)
-- vehicle_class: Categories like LMV, MCWG, etc.
-- address: Address if visible
-
-OUTPUT FORMAT (strict JSON):
-{
-  "document_type": "aadhaar" | "pan" | "dl" | "other" | "unknown",
-  "extracted_data": { ... fields as above ... },
-  "confidence": 0.0 to 1.0,
-  "extraction_notes": "any issues or unclear areas"
-}"""
-
-    try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"ocr_{uuid.uuid4()}",
-            system_message=system_prompt
-        ).with_model("openai", "gpt-5.2")
-        
-        # More specific prompt based on document type
-        if document_type and document_type != "auto":
-            prompt = f"""Analyze this {document_type.upper()} document image carefully.
-
-STEP 1: Identify if this is actually a {document_type.upper()} document
-STEP 2: Locate each required field on the document
-STEP 3: Extract text character-by-character for ID numbers
-STEP 4: Verify the format matches expected pattern
-STEP 5: Assign confidence based on clarity
-
-Return ONLY valid JSON with extracted data."""
-        else:
-            prompt = """Analyze this document image carefully.
-
-STEP 1: Identify the document type (Aadhaar/PAN/DL/Other)
-STEP 2: Locate each required field for that document type
-STEP 3: Extract text character-by-character for ID numbers
-STEP 4: Verify formats match expected patterns
-STEP 5: Assign confidence based on clarity
-
-Return ONLY valid JSON with extracted data."""
-        
-        image_content = ImageContent(image_base64=image_base64)
-        user_message = UserMessage(text=prompt, file_contents=[image_content])
-        
-        response = await chat.send_message(user_message)
-        
-        # Parse the response
-        # Try to extract JSON from the response
-        json_match = re.search(r'\{[\s\S]*\}', response)
-        if json_match:
-            result = json.loads(json_match.group())
-            # Apply post-processing validation
-            result = post_process_extraction(result)
-            return result
-        else:
-            return {
-                "document_type": "unknown",
-                "extracted_data": {"raw_text": response},
-                "confidence": 0.3,
-                "extraction_notes": "Could not parse structured response"
-            }
-            
-    except Exception as e:
-        logging.error(f"OCR extraction error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"OCR processing failed: {str(e)}")
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OCR service not configured")
+    
+    # Use multi-pass extraction for better accuracy
+    result = await extract_with_retry(image_base64, document_type, api_key)
+    return result
 
 # ========== AUTH ENDPOINTS ==========
 
