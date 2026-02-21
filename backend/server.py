@@ -87,6 +87,8 @@ class OCRResponse(BaseModel):
     timestamp: str
     field_validations: Optional[Dict[str, Any]] = None
     extraction_notes: Optional[str] = None
+    extraction_method: Optional[str] = None
+    extraction_details: Optional[Dict[str, Any]] = None
 
 class UsageStats(BaseModel):
     model_config = ConfigDict(extra="ignore")
