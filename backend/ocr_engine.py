@@ -1,16 +1,15 @@
 """
-ExtractAI - Universal Document Extractor using GPT Vision
-=========================================================
+ExtractAI - Universal Document Extractor using Gemini 3 Flash Vision
+=====================================================================
 Supports: Aadhaar, PAN, DL, Passport, Voter ID, and general documents
-Engine: GPT-5.2 Vision (via Emergent LLM Key)
+Engine: Gemini 3 Flash Vision (via Emergent LLM Key)
 
-Cost: ~$0.02/extraction (included in Emergent plan)
-Accuracy: 90-95% on most documents
+Cost: ~$0.00165/extraction (1000 extractions = ~$1.65)
+Accuracy: 90-95% on clear documents
 """
 
 import re
 import logging
-import base64
 import json
 import os
 import uuid
@@ -36,7 +35,7 @@ class ExtractionResult:
     extracted_data: Dict[str, Any]
     raw_text: str
     confidence: float
-    extraction_method: str = "gpt_vision"
+    extraction_method: str = "gemini_flash"
     quality_score: float = 0.0
     preprocessing_used: str = "none"
     suggestions: List[str] = field(default_factory=list)
@@ -76,11 +75,15 @@ def validate_pan(pan: str) -> tuple:
     return True, holder_types.get(pan[3].upper(), 'Unknown')
 
 
-# ============ GPT VISION EXTRACTION ============
+# ============ GEMINI 3 FLASH VISION EXTRACTION ============
 
 async def extract_document(image_base64: str, document_type: Optional[str] = None) -> ExtractionResult:
     """
-    Extract document information using GPT-5.2 Vision
+    Extract document information using Gemini 3 Flash Vision
+    
+    Cost: ~$0.00165 per extraction
+    - Input: $0.50/1M tokens (~1500 tokens per image = $0.00075)
+    - Output: $3.00/1M tokens (~300 tokens output = $0.0009)
     """
     from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
     
@@ -88,7 +91,7 @@ async def extract_document(image_base64: str, document_type: Optional[str] = Non
     if not api_key:
         raise ValueError("EMERGENT_LLM_KEY not configured")
     
-    # Build the system prompt based on document type
+    # Build the system prompt for document extraction
     system_prompt = """You are an expert OCR system for extracting information from identity documents.
 
 IMPORTANT INSTRUCTIONS:
@@ -155,7 +158,7 @@ ALWAYS return valid JSON. Extract as much information as possible."""
             api_key=api_key,
             session_id=f"ocr_{uuid.uuid4()}",
             system_message=system_prompt
-        ).with_model("openai", "gpt-5.2")
+        ).with_model("gemini", "gemini-3-flash-preview")
         
         # Build prompt based on document type hint
         if document_type and document_type != "auto":
@@ -171,9 +174,9 @@ Return ONLY valid JSON with the extracted data."""
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(text=prompt, file_contents=[image_content])
         
-        logger.info(f"Sending image to GPT Vision for {document_type or 'auto'} extraction")
+        logger.info(f"Sending image to Gemini 3 Flash for {document_type or 'auto'} extraction")
         response = await chat.send_message(user_message)
-        logger.info(f"GPT Vision response received: {len(response)} chars")
+        logger.info(f"Gemini 3 Flash response received: {len(response)} chars")
         
         # Parse JSON response
         json_match = re.search(r'\{[\s\S]*\}', response)
@@ -213,7 +216,7 @@ Return ONLY valid JSON with the extracted data."""
                 extracted_data=extracted,
                 raw_text=response,
                 confidence=round(confidence, 2),
-                extraction_method="gpt_vision",
+                extraction_method="gemini_flash",
                 quality_score=round(confidence, 2),
                 preprocessing_used="none",
                 suggestions=suggestions
@@ -225,16 +228,16 @@ Return ONLY valid JSON with the extracted data."""
                 extracted_data={"raw_response": response[:500]},
                 raw_text=response,
                 confidence=0.3,
-                extraction_method="gpt_vision",
+                extraction_method="gemini_flash",
                 quality_score=0.3,
                 suggestions=["Could not parse structured response from AI"]
             )
             
     except Exception as e:
-        logger.error(f"GPT Vision extraction error: {e}")
+        logger.error(f"Gemini 3 Flash extraction error: {e}")
         raise ValueError(f"OCR processing failed: {str(e)}")
 
 
-async def extract_with_gpt_fallback(image_base64: str, document_type: Optional[str] = None) -> ExtractionResult:
+async def extract_with_fallback(image_base64: str, document_type: Optional[str] = None) -> ExtractionResult:
     """Alias for main extraction function"""
     return await extract_document(image_base64, document_type)
