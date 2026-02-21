@@ -429,9 +429,29 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
     num3 = str(num3_raw).replace(" ", "")
     logging.info(f"Pass 3 - Aadhaar: {num3_raw}")
     
+    # Check how many passes disagree
+    numbers_set = set([num1, num2, num3])
+    disagreement_level = len(numbers_set)
+    
     # Compare digit by digit and use consensus
     final_number = consensus_digit_voting(num1, num2, num3)
     logging.info(f"Consensus result: {final_number}")
+    
+    # Determine confidence based on agreement level
+    if disagreement_level >= 3:
+        # All three passes gave different numbers - low quality image
+        confidence = 0.65
+        requires_review = True
+        quality_warning = "All 3 extraction passes returned different results. Image quality may be too low for reliable OCR. Consider uploading a clearer image."
+    elif disagreement_level == 2:
+        # Two passes disagree
+        confidence = 0.75
+        requires_review = True
+        quality_warning = "Extraction passes had disagreements. Result may need manual verification."
+    else:
+        confidence = 0.85
+        requires_review = False
+        quality_warning = None
     
     if len(final_number) == 12:
         formatted = f"{final_number[:4]} {final_number[4:8]} {final_number[8:12]}"
@@ -442,8 +462,10 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
                 "aadhaar_number": formatted,
                 **{k: v for k, v in result2.get("extracted_data", {}).items() if k != "aadhaar_number"}
             },
-            "confidence": 0.85,  # Moderate confidence for consensus
+            "confidence": confidence,
             "extraction_method": "triple_pass_digit_consensus",
+            "requires_human_review": requires_review,
+            "quality_warning": quality_warning,
             "extraction_details": {
                 "pass1": f"{num1[:4]} {num1[4:8]} {num1[8:12]}" if len(num1) == 12 else num1,
                 "pass2": f"{num2[:4]} {num2[4:8]} {num2[8:12]}" if len(num2) == 12 else num2,
