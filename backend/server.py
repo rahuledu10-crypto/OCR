@@ -392,15 +392,6 @@ Read each digit fresh. Don't assume previous readings were correct.
 
 Output JSON:
 {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
-- Could that 0 actually be a 6? (6 has tail)
-- Could that 8 actually be a 3? (3 is open on left)
-- Could that 2 actually be a 7? (7 has straight top)
-
-The first digit of an Aadhaar number is typically 2-9 (never 0 or 1).
-
-Read the number again very carefully and output the corrected version.
-
-Return: {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
 
     try:
         chat = LlmChat(
