@@ -89,6 +89,8 @@ class OCRResponse(BaseModel):
     extraction_notes: Optional[str] = None
     extraction_method: Optional[str] = None
     extraction_details: Optional[Dict[str, Any]] = None
+    requires_human_review: Optional[bool] = None
+    quality_warning: Optional[str] = None
 
 class UsageStats(BaseModel):
     model_config = ConfigDict(extra="ignore")
