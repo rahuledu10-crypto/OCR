@@ -101,55 +101,74 @@ def extract_text_with_paddle(image_array: np.ndarray) -> Tuple[str, float, List[
     """
     ocr = get_ocr_engine()
     
-    # Run OCR
-    result = ocr.ocr(image_array, cls=True)
+    # Run OCR - PaddleOCR 3.x uses predict() instead of ocr()
+    result = ocr.predict(image_array)
     
     logger.info(f"PaddleOCR raw result type: {type(result)}")
     
     if not result:
         return "", 0.0, []
     
-    # Handle different result formats
-    # PaddleOCR can return list of lists or list of dicts
-    ocr_lines = result[0] if result and len(result) > 0 else []
-    
-    if not ocr_lines:
-        return "", 0.0, []
-    
-    # Extract text and confidence from results
+    # Handle different result formats based on version
+    # PaddleOCR 3.x returns a generator or list
     text_blocks = []
     all_text = []
     total_confidence = 0
     
-    for line in ocr_lines:
-        try:
-            if line is None:
+    try:
+        # If result is a generator, convert to list
+        if hasattr(result, '__iter__') and not isinstance(result, (list, dict)):
+            result = list(result)
+        
+        # Process results
+        for item in result:
+            if item is None:
                 continue
+            
+            # PaddleOCR 3.x returns dicts with 'rec_texts', 'rec_scores', 'dt_polys'
+            if isinstance(item, dict):
+                rec_texts = item.get('rec_texts', [])
+                rec_scores = item.get('rec_scores', [])
+                dt_polys = item.get('dt_polys', [])
                 
-            # Handle different formats
-            if isinstance(line, (list, tuple)) and len(line) >= 2:
-                bbox = line[0]  # Bounding box coordinates
-                text_info = line[1]  # (text, confidence) or dict
-                
-                if isinstance(text_info, (list, tuple)) and len(text_info) >= 2:
-                    text = str(text_info[0])
-                    confidence = float(text_info[1])
-                elif isinstance(text_info, dict):
-                    text = str(text_info.get('text', ''))
-                    confidence = float(text_info.get('confidence', 0))
-                else:
-                    continue
+                for i, text in enumerate(rec_texts):
+                    score = rec_scores[i] if i < len(rec_scores) else 0.5
+                    bbox = dt_polys[i] if i < len(dt_polys) else []
                     
-                all_text.append(text)
-                total_confidence += confidence
-                text_blocks.append({
-                    "text": text,
-                    "confidence": confidence,
-                    "bbox": bbox
-                })
-        except Exception as e:
-            logger.warning(f"Error parsing OCR line: {e}, line: {line}")
-            continue
+                    all_text.append(str(text))
+                    total_confidence += float(score)
+                    text_blocks.append({
+                        "text": str(text),
+                        "confidence": float(score),
+                        "bbox": bbox
+                    })
+            
+            # Handle legacy format (list of lists)
+            elif isinstance(item, (list, tuple)):
+                for line in item:
+                    try:
+                        if isinstance(line, (list, tuple)) and len(line) >= 2:
+                            bbox = line[0]
+                            text_info = line[1]
+                            
+                            if isinstance(text_info, (list, tuple)) and len(text_info) >= 2:
+                                text = str(text_info[0])
+                                confidence = float(text_info[1])
+                            else:
+                                continue
+                            
+                            all_text.append(text)
+                            total_confidence += confidence
+                            text_blocks.append({
+                                "text": text,
+                                "confidence": confidence,
+                                "bbox": bbox
+                            })
+                    except Exception as e:
+                        logger.warning(f"Error parsing OCR line: {e}")
+                        continue
+    except Exception as e:
+        logger.error(f"Error processing OCR results: {e}")
     
     full_text = "\n".join(all_text)
     avg_confidence = total_confidence / len(text_blocks) if text_blocks else 0
