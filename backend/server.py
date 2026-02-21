@@ -77,7 +77,8 @@ class APIKeyFull(APIKeyResponse):
 
 class OCRRequest(BaseModel):
     image_base64: str
-    document_type: Optional[str] = None  # aadhaar, pan, dl, auto
+    document_type: Optional[str] = None  # aadhaar, pan, dl, passport, voter_id, auto
+    use_gpt_fallback: Optional[bool] = False  # Use GPT Vision for difficult images
 
 class OCRResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -87,12 +88,10 @@ class OCRResponse(BaseModel):
     confidence: float
     processing_time_ms: int
     timestamp: str
-    field_validations: Optional[Dict[str, Any]] = None
-    extraction_notes: Optional[str] = None
     extraction_method: Optional[str] = None
-    extraction_details: Optional[Dict[str, Any]] = None
-    requires_human_review: Optional[bool] = None
-    quality_warning: Optional[str] = None
+    quality_score: Optional[float] = None
+    preprocessing_used: Optional[str] = None
+    suggestions: Optional[List[str]] = None
 
 class UsageStats(BaseModel):
     model_config = ConfigDict(extra="ignore")
