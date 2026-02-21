@@ -26,10 +26,10 @@ def get_ocr_engine():
     global _ocr_engine
     if _ocr_engine is None:
         logger.info("Initializing PaddleOCR engine...")
+        # PaddleOCR 3.x API - minimal args
         _ocr_engine = PaddleOCR(
-            use_angle_cls=True,  # Detect rotated text
-            lang='en',           # English (works for Indian docs)
-            use_gpu=False        # CPU mode for compatibility
+            lang='en',                      # English (works for Indian docs with English text)
+            use_textline_orientation=True   # Handle rotated text
         )
         logger.info("PaddleOCR engine initialized successfully")
     return _ocr_engine
