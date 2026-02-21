@@ -519,23 +519,31 @@ def consensus_digit_voting(num1: str, num2: str, num3: str) -> str:
 
 # ========== MAIN OCR FUNCTION ==========
 
-async def extract_document_info(image_base64: str, document_type: Optional[str] = None) -> Dict[str, Any]:
+async def extract_document_info(image_base64: str, document_type: Optional[str] = None, use_gpt_fallback: bool = False) -> Dict[str, Any]:
     """
-    Extract information from document image using PaddleOCR (self-hosted)
+    Universal Document Extractor
     
-    Cost: ~$0.005 per extraction (just compute)
-    Accuracy: 95-97% on Indian ID documents
+    Supports: Aadhaar, PAN, DL, Passport, Voter ID, and general documents
+    Engine: Tesseract with multi-pass preprocessing
+    Fallback: GPT Vision for difficult images (optional)
+    
+    Cost: ~$0.001/extraction (Tesseract) or ~$0.02/extraction (GPT fallback)
     """
     try:
-        # Use our PaddleOCR engine
-        result = await extract_document(image_base64, document_type)
+        if use_gpt_fallback:
+            from ocr_engine import extract_with_gpt_fallback
+            result = await extract_with_gpt_fallback(image_base64, document_type)
+        else:
+            result = await extract_document(image_base64, document_type)
         
         return {
             "document_type": result.document_type,
             "extracted_data": result.extracted_data,
             "confidence": result.confidence,
             "extraction_method": result.extraction_method,
-            "raw_text": result.raw_text[:500] if result.raw_text else None  # Truncate for response
+            "quality_score": result.quality_score,
+            "preprocessing_used": result.preprocessing_used,
+            "suggestions": result.suggestions,
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
