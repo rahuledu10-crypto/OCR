@@ -29,8 +29,7 @@ def get_ocr_engine():
         _ocr_engine = PaddleOCR(
             use_angle_cls=True,  # Detect rotated text
             lang='en',           # English (works for Indian docs)
-            use_gpu=False,       # CPU mode for compatibility
-            show_log=False       # Reduce noise
+            use_gpu=False        # CPU mode for compatibility
         )
         logger.info("PaddleOCR engine initialized successfully")
     return _ocr_engine
