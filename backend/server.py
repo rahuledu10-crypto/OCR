@@ -17,7 +17,9 @@ import jwt
 import bcrypt
 import base64
 import asyncio
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+
+# Import our custom OCR engine (PaddleOCR-based)
+from ocr_engine import extract_document, ExtractionResult
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
