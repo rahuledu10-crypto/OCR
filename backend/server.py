@@ -336,62 +336,33 @@ def merge_extraction_results(result1: Dict, result2: Dict) -> Dict:
 async def single_extraction(image_base64: str, document_type: Optional[str], api_key: str, pass_num: int = 1) -> Dict[str, Any]:
     """Single extraction pass with different prompts based on pass number"""
     
+    # Use a consistent, simple system prompt for all passes
+    system_prompt = """You are an OCR system. Extract the Aadhaar number from the image.
+
+The Aadhaar number is 12 digits at the bottom of the card, above the red line.
+Format: XXXX XXXX XXXX
+
+IMPORTANT: Read each digit carefully. Common errors in blurry images:
+- 5 looks like 9 (but 5 has flat top)
+- 0 looks like 9 (but 0 is just an oval)
+- 3 looks like 8 (but 3 is open on left)
+
+Always respond with valid JSON:
+{"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
+    
+    # Different prompts for each pass
     if pass_num == 1:
-        system_prompt = """You are an expert OCR system for Indian Aadhaar cards.
-
-TASK: Extract the 12-digit Aadhaar number from the card.
-
-LOCATION: Look at the BOTTOM of the card - there is a large 12-digit number printed in BOLD just ABOVE the red/maroon horizontal line. This is the Aadhaar number.
-
-FORMAT: XXXX XXXX XXXX
-
-CRITICAL DIGIT RECOGNITION:
-- Look at each digit's SHAPE very carefully
-- In blurry images: 0 and 9 look similar. 0 is a closed oval. 9 has a stem going down.
-- The digit 5 has a FLAT TOP with right angle. Do not confuse with 9.
-- The digit 3 is OPEN on the left side
-- The digit 6 has a CURLED TAIL
-
-Read the number carefully and return JSON:
-{"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
-    
+        prompt = "Extract the 12-digit Aadhaar number from this card. Return JSON only."
     elif pass_num == 2:
-        system_prompt = """DIGIT-BY-DIGIT Aadhaar extraction.
-
-Look at the 12 large digits at the bottom of this Aadhaar card (above red line).
-
-For EACH position, identify the digit:
-
-FIRST GROUP (positions 1-4):
-- Digit 1: Describe what you see - is the top flat (5) or curved (9)?
-- Digit 2: What is it? Note: 9 has a circle with tail down, 0 is just oval
-- Digit 3: Is it open on left (3) or has closed loops (8)?
-- Digit 4: What digit?
-
-SECOND GROUP (positions 5-8):
-- Digits 5-8: What are they?
-
-THIRD GROUP (positions 9-12):
-- Digits 9-12: What are they?
-
-Output ONLY JSON:
-{"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
-    
+        prompt = """Read the Aadhaar number digit by digit from left to right.
+The number is at the bottom of the card above the red line.
+Pay special attention to: first digit (is it 5 or 9?), second digit (is it 0 or 9?).
+Return JSON with the aadhaar_number."""
     else:
-        # Pass 3: Re-examine with fresh perspective
-        system_prompt = """VERIFICATION PASS - Read the Aadhaar number again.
-
-The 12-digit number at the bottom of this Aadhaar card.
-
-IMPORTANT CORRECTIONS - Previous readings may have these errors:
-- 0 instead of 9: Look again - does it have a tail going down? Then it's 9.
-- 9 instead of 5: Look at the top - if FLAT and angular, it's 5.
-- 2 instead of 7: Check for horizontal stroke at top.
-
-Read each digit fresh. Don't assume previous readings were correct.
-
-Output JSON:
-{"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
+        prompt = """VERIFY the Aadhaar number one more time.
+Look at the first 4 digits especially carefully.
+Common misreads: 5 as 9, 9 as 0.
+Return JSON with your final answer."""
 
     try:
         chat = LlmChat(
