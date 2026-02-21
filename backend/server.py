@@ -460,9 +460,11 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
     conf2 = result2.get("confidence", 0)
     logging.info(f"Pass 2 - Aadhaar: {result2.get('extracted_data', {}).get('aadhaar_number', 'N/A')}, Confidence: {conf2}")
     
-    # Check if both passes agree
-    num1 = result1.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
-    num2 = result2.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
+    # Check if both passes agree (handle None values)
+    num1_raw = result1.get("extracted_data", {}).get("aadhaar_number") or ""
+    num2_raw = result2.get("extracted_data", {}).get("aadhaar_number") or ""
+    num1 = str(num1_raw).replace(" ", "")
+    num2 = str(num2_raw).replace(" ", "")
     
     if num1 == num2 and len(num1) == 12:
         # Both agree - good confidence
@@ -473,8 +475,9 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
     
     # Disagreement - do a third verification pass
     result3 = await single_extraction(image_base64, document_type, api_key, pass_num=3)
-    num3 = result3.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
-    logging.info(f"Pass 3 - Aadhaar: {result3.get('extracted_data', {}).get('aadhaar_number', 'N/A')}")
+    num3_raw = result3.get("extracted_data", {}).get("aadhaar_number") or ""
+    num3 = str(num3_raw).replace(" ", "")
+    logging.info(f"Pass 3 - Aadhaar: {num3_raw}")
     
     # Compare digit by digit and use consensus
     final_number = consensus_digit_voting(num1, num2, num3)
