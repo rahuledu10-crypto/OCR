@@ -446,6 +446,8 @@ async def extract_document(image_base64: str, document_type: Optional[str] = Non
         else:
             extracted_data = {"raw_text": full_text}
         
+        logger.info(f"Extraction complete: {extracted_data}")
+        
         return ExtractionResult(
             document_type=doc_type.value,
             extracted_data=extracted_data,
@@ -456,4 +458,5 @@ async def extract_document(image_base64: str, document_type: Optional[str] = Non
         
     except Exception as e:
         logger.error(f"Extraction error: {e}")
+        logger.error(traceback.format_exc())
         raise
