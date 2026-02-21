@@ -249,11 +249,17 @@ def extract_pan_fields(text: str, text_blocks: List[Dict]) -> Dict[str, Any]:
     
     # Extract PAN number
     for block in text_blocks:
-        match = PAN_PATTERN.search(block['text'].upper())
-        if match:
-            fields['pan_number'] = match.group()
-            fields['pan_confidence'] = block['confidence']
-            break
+        try:
+            if not isinstance(block, dict):
+                continue
+            match = PAN_PATTERN.search(str(block.get('text', '')).upper())
+            if match:
+                fields['pan_number'] = match.group()
+                fields['pan_confidence'] = block.get('confidence', 0)
+                break
+        except Exception as e:
+            logger.warning(f"Error parsing block: {e}")
+            continue
     
     if 'pan_number' not in fields:
         match = PAN_PATTERN.search(text_upper)
