@@ -336,39 +336,65 @@ async def single_extraction(image_base64: str, document_type: Optional[str], api
     
     if pass_num == 1:
         system_prompt = """You are an expert OCR system for Indian identity documents.
-Extract with PRECISION. For ID numbers, read each digit carefully.
 
-AADHAAR: 12 digits in format XXXX XXXX XXXX
-PAN: 10 chars format ABCDE1234F
-DL: State code + numbers
+AADHAAR CARD EXTRACTION:
+The Aadhaar number is a 12-digit number, usually printed in LARGE BOLD font at the BOTTOM of the card, just above the red/maroon line.
 
-CRITICAL: Common OCR confusions to avoid:
-- 5 vs 9 (look at the curve direction)
-- 3 vs 8 (count the loops)
-- 0 vs 6 (check if closed or open)
-- 1 vs 7 (check for the horizontal stroke)
+FORMAT: XXXX XXXX XXXX (4 digits, space, 4 digits, space, 4 digits)
 
-Return JSON with: document_type, extracted_data, confidence (0-1)"""
+CRITICAL - These digits look similar in poor quality images:
+- 5 and 9: The digit 5 has a FLAT horizontal top. The digit 9 has a ROUND circular top.
+- 3 and 8: The digit 3 is OPEN on the left. The digit 8 is CLOSED with two loops.
+- 0 and 6: The digit 0 is a simple OVAL. The digit 6 has a CURVED TAIL going up on the left.
+- 2 and 7: The digit 2 has a CURVED top. The digit 7 has a STRAIGHT horizontal top.
+
+Look at the Aadhaar number in the image. Read EACH digit carefully.
+
+Return JSON with: document_type, extracted_data (including aadhaar_number), confidence"""
+    
+    elif pass_num == 2:
+        # Pass 2: Character-by-character with position awareness
+        system_prompt = """You are reading the Aadhaar number from an Indian Aadhaar card.
+
+LOCATION: The 12-digit number at the BOTTOM of the card, above the red line.
+
+READ EACH DIGIT POSITION BY POSITION:
+Position 1 (leftmost): What digit? Look carefully - if it has a flat top it's 5, round top is 9
+Position 2: What digit?
+Position 3: What digit? If open on left it's 3, if closed loops it's 8
+Position 4: What digit?
+[space]
+Position 5: What digit?
+Position 6: What digit?
+Position 7: What digit?
+Position 8: What digit?
+[space]
+Position 9: What digit?
+Position 10: What digit?
+Position 11: What digit?
+Position 12: What digit?
+
+IMPORTANT: In blurry images, 5 is often misread as 9. Check the TOP of the digit - FLAT = 5, ROUND = 9.
+
+Return: {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
+    
     else:
-        # Pass 2: Ultra-focused on digits
-        system_prompt = """You are a DIGIT VERIFICATION specialist for Indian ID documents.
+        # Pass 3: Final verification with explicit alternatives
+        system_prompt = """FINAL VERIFICATION of Aadhaar number.
 
-TASK: Focus ONLY on the ID number. Read it DIGIT BY DIGIT.
+Look at the 12-digit number at the bottom of the card.
 
-For AADHAAR (12 digits at bottom of card):
-- Look for the large numbers near the bottom
-- Read LEFT to RIGHT, one digit at a time
-- Format: XXXX XXXX XXXX
+For EACH digit that looks unclear, consider these common confusions:
+- Could that 9 actually be a 5? (5 has flat top)
+- Could that 0 actually be a 6? (6 has tail)
+- Could that 8 actually be a 3? (3 is open on left)
+- Could that 2 actually be a 7? (7 has straight top)
 
-DIGIT VERIFICATION RULES:
-- 5 has a flat top, 9 has a round top
-- 3 has two bumps on right, 8 has two loops
-- 0 is oval, 6 has a tail
-- 1 is thin, 7 has a horizontal line
+The first digit of an Aadhaar number is typically 2-9 (never 0 or 1).
 
-Read each digit SLOWLY. Double-check before outputting.
+Read the number again very carefully and output the corrected version.
 
-Return JSON: {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
+Return: {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
 
     try:
         chat = LlmChat(
@@ -378,15 +404,28 @@ Return JSON: {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "
         ).with_model("openai", "gpt-5.2")
         
         if pass_num == 1:
-            prompt = "Extract all information from this document. Return valid JSON."
+            prompt = """Look at this Aadhaar card image.
+Find the 12-digit Aadhaar number at the bottom of the card (large digits above the red line).
+Read each digit carefully. Remember: 5 has flat top, 9 has round top.
+Return the extracted data as JSON."""
+        elif pass_num == 2:
+            prompt = """DIGIT-BY-DIGIT EXTRACTION:
+
+Look at the large 12-digit number at the bottom of this Aadhaar card.
+
+Read position by position from left to right.
+For the FIRST digit: Does it have a FLAT top (=5) or ROUND top (=9)?
+For any digit that could be 3 or 8: Is it OPEN on left (=3) or CLOSED loops (=8)?
+
+Output the 12 digits in format XXXX XXXX XXXX."""
         else:
-            prompt = """FOCUS ON THE ID NUMBER ONLY.
+            prompt = """VERIFICATION PASS:
 
-Look at the large digits on this document.
-Read each digit one by one from left to right.
-Double-check digits that look similar (5/9, 3/8, 0/6).
+Look at the Aadhaar number one more time.
+The first group of 4 digits - read each one carefully.
+Especially check: Is the first digit a 5 (flat top) or 9 (round top)?
 
-Return ONLY the ID number in JSON format."""
+Output your final answer."""
         
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(text=prompt, file_contents=[image_content])
@@ -405,28 +444,72 @@ Return ONLY the ID number in JSON format."""
         logging.error(f"OCR pass {pass_num} error: {str(e)}")
         return {"document_type": "unknown", "extracted_data": {}, "confidence": 0}
 
-# ========== OCR EXTRACTION LOGIC ==========
-
-async def extract_document_info(image_base64: str, document_type: Optional[str] = None) -> Dict[str, Any]:
-    """Extract information from document image using GPT-5.2 Vision with multi-pass verification"""
+async def extract_with_retry(image_base64: str, document_type: Optional[str], api_key: str) -> Dict[str, Any]:
+    """Extract with up to 3 passes for difficult images"""
     
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
-    if not api_key:
-        raise HTTPException(status_code=500, detail="OCR service not configured")
+    # First pass - standard extraction
+    result1 = await single_extraction(image_base64, document_type, api_key, pass_num=1)
+    conf1 = result1.get("confidence", 0)
     
-    # Use multi-pass extraction for better accuracy
-    result = await extract_with_retry(image_base64, document_type, api_key)
-    return result
-
-
-# ========== LEGACY SINGLE EXTRACTION (kept for reference) ==========
-
-async def extract_document_info_legacy(image_base64: str, document_type: Optional[str] = None) -> Dict[str, Any]:
-    """Legacy single-pass extraction"""
+    # If confidence is very high, return immediately
+    if conf1 >= 0.85:
+        result1["extraction_method"] = "single_pass_high_confidence"
+        return result1
     
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
-    if not api_key:
-        raise HTTPException(status_code=500, detail="OCR service not configured")
+    # Second pass - digit-focused
+    result2 = await single_extraction(image_base64, document_type, api_key, pass_num=2)
+    conf2 = result2.get("confidence", 0)
+    
+    # Check if both passes agree
+    num1 = result1.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
+    num2 = result2.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
+    
+    if num1 == num2 and len(num1) == 12:
+        # Both agree - good confidence
+        merged = result2.copy()
+        merged["confidence"] = min(0.92, max(conf1, conf2) + 0.1)
+        merged["extraction_method"] = "dual_pass_agreement"
+        return merged
+    
+    # Disagreement - do a third verification pass
+    result3 = await single_extraction(image_base64, document_type, api_key, pass_num=3)
+    num3 = result3.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
+    
+    # Voting: pick the number that appears most often
+    numbers = [num1, num2, num3]
+    number_counts = {}
+    for n in numbers:
+        if len(n) == 12:
+            number_counts[n] = number_counts.get(n, 0) + 1
+    
+    if number_counts:
+        # Get the most common number
+        best_number = max(number_counts, key=number_counts.get)
+        votes = number_counts[best_number]
+        
+        # Format it properly
+        formatted = f"{best_number[:4]} {best_number[4:8]} {best_number[8:12]}"
+        
+        return {
+            "document_type": "aadhaar",
+            "extracted_data": {
+                "aadhaar_number": formatted,
+                **{k: v for k, v in result2.get("extracted_data", {}).items() if k != "aadhaar_number"}
+            },
+            "confidence": round(0.5 + (votes * 0.15), 2),
+            "extraction_method": "triple_pass_voting",
+            "extraction_details": {
+                "pass1": num1,
+                "pass2": num2,
+                "pass3": num3,
+                "votes": votes
+            }
+        }
+    
+    # Fallback to the best single result
+    best_result = max([result1, result2, result3], key=lambda r: r.get("confidence", 0))
+    best_result["extraction_method"] = "triple_pass_best_confidence"
+    return best_result
     
     system_prompt = """You are an expert OCR system specialized in extracting information from Indian identity documents.
 Your extractions must be PRECISE and follow exact formats.
