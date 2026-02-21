@@ -247,10 +247,180 @@ def post_process_extraction(result: Dict[str, Any]) -> Dict[str, Any]:
     
     return result
 
+# ========== MULTI-PASS OCR FOR LOW CONFIDENCE ==========
+
+async def extract_with_retry(image_base64: str, document_type: Optional[str], api_key: str) -> Dict[str, Any]:
+    """Extract with retry for low confidence - focuses on digit verification"""
+    
+    # First pass - standard extraction
+    first_result = await single_extraction(image_base64, document_type, api_key, pass_num=1)
+    
+    first_confidence = first_result.get("confidence", 0)
+    
+    # If confidence is good enough, return
+    if first_confidence >= 0.75:
+        first_result["extraction_method"] = "single_pass"
+        return first_result
+    
+    # Second pass - digit-focused extraction for ID numbers
+    second_result = await single_extraction(image_base64, document_type, api_key, pass_num=2)
+    
+    # Compare and merge results
+    merged = merge_extraction_results(first_result, second_result)
+    merged["extraction_method"] = "multi_pass_verified"
+    
+    return merged
+
+def merge_extraction_results(result1: Dict, result2: Dict) -> Dict:
+    """Merge two extraction results, preferring higher confidence values"""
+    
+    data1 = result1.get("extracted_data", {})
+    data2 = result2.get("extracted_data", {})
+    conf1 = result1.get("confidence", 0)
+    conf2 = result2.get("confidence", 0)
+    
+    merged_data = {}
+    comparison_notes = []
+    
+    # Get all keys from both
+    all_keys = set(data1.keys()) | set(data2.keys())
+    
+    for key in all_keys:
+        val1 = data1.get(key)
+        val2 = data2.get(key)
+        
+        if val1 == val2:
+            # Both agree - high confidence
+            merged_data[key] = val1
+        elif val1 and not val2:
+            merged_data[key] = val1
+        elif val2 and not val1:
+            merged_data[key] = val2
+        else:
+            # Disagreement - use the one from higher confidence pass
+            # For ID numbers, prefer pass 2 (digit-focused)
+            if key in ["aadhaar_number", "pan_number", "dl_number"]:
+                merged_data[key] = val2  # Pass 2 is digit-focused
+                comparison_notes.append(f"{key}: '{val1}' vs '{val2}' - used digit-focused result")
+            else:
+                merged_data[key] = val1 if conf1 >= conf2 else val2
+    
+    # Calculate merged confidence
+    # If both passes agree on ID number, boost confidence
+    id_fields = ["aadhaar_number", "pan_number", "dl_number"]
+    id_match = any(
+        data1.get(f) == data2.get(f) and data1.get(f) is not None 
+        for f in id_fields
+    )
+    
+    merged_confidence = (conf1 + conf2) / 2
+    if id_match:
+        merged_confidence = min(0.95, merged_confidence + 0.15)
+    
+    return {
+        "document_type": result2.get("document_type") or result1.get("document_type"),
+        "extracted_data": merged_data,
+        "confidence": round(merged_confidence, 2),
+        "extraction_notes": "; ".join(comparison_notes) if comparison_notes else "Multi-pass verified",
+        "pass_comparison": {
+            "pass1_confidence": conf1,
+            "pass2_confidence": conf2,
+            "fields_matched": id_match
+        }
+    }
+
+async def single_extraction(image_base64: str, document_type: Optional[str], api_key: str, pass_num: int = 1) -> Dict[str, Any]:
+    """Single extraction pass with different prompts based on pass number"""
+    
+    if pass_num == 1:
+        system_prompt = """You are an expert OCR system for Indian identity documents.
+Extract with PRECISION. For ID numbers, read each digit carefully.
+
+AADHAAR: 12 digits in format XXXX XXXX XXXX
+PAN: 10 chars format ABCDE1234F
+DL: State code + numbers
+
+CRITICAL: Common OCR confusions to avoid:
+- 5 vs 9 (look at the curve direction)
+- 3 vs 8 (count the loops)
+- 0 vs 6 (check if closed or open)
+- 1 vs 7 (check for the horizontal stroke)
+
+Return JSON with: document_type, extracted_data, confidence (0-1)"""
+    else:
+        # Pass 2: Ultra-focused on digits
+        system_prompt = """You are a DIGIT VERIFICATION specialist for Indian ID documents.
+
+TASK: Focus ONLY on the ID number. Read it DIGIT BY DIGIT.
+
+For AADHAAR (12 digits at bottom of card):
+- Look for the large numbers near the bottom
+- Read LEFT to RIGHT, one digit at a time
+- Format: XXXX XXXX XXXX
+
+DIGIT VERIFICATION RULES:
+- 5 has a flat top, 9 has a round top
+- 3 has two bumps on right, 8 has two loops
+- 0 is oval, 6 has a tail
+- 1 is thin, 7 has a horizontal line
+
+Read each digit SLOWLY. Double-check before outputting.
+
+Return JSON: {"document_type": "aadhaar", "extracted_data": {"aadhaar_number": "XXXX XXXX XXXX"}, "confidence": 0.X}"""
+
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"ocr_pass{pass_num}_{uuid.uuid4()}",
+            system_message=system_prompt
+        ).with_model("openai", "gpt-5.2")
+        
+        if pass_num == 1:
+            prompt = "Extract all information from this document. Return valid JSON."
+        else:
+            prompt = """FOCUS ON THE ID NUMBER ONLY.
+
+Look at the large digits on this document.
+Read each digit one by one from left to right.
+Double-check digits that look similar (5/9, 3/8, 0/6).
+
+Return ONLY the ID number in JSON format."""
+        
+        image_content = ImageContent(image_base64=image_base64)
+        user_message = UserMessage(text=prompt, file_contents=[image_content])
+        
+        response = await chat.send_message(user_message)
+        
+        json_match = re.search(r'\{[\s\S]*\}', response)
+        if json_match:
+            result = json.loads(json_match.group())
+            result = post_process_extraction(result)
+            return result
+        
+        return {"document_type": "unknown", "extracted_data": {}, "confidence": 0.3}
+        
+    except Exception as e:
+        logging.error(f"OCR pass {pass_num} error: {str(e)}")
+        return {"document_type": "unknown", "extracted_data": {}, "confidence": 0}
+
 # ========== OCR EXTRACTION LOGIC ==========
 
 async def extract_document_info(image_base64: str, document_type: Optional[str] = None) -> Dict[str, Any]:
-    """Extract information from document image using GPT-5.2 Vision with validation"""
+    """Extract information from document image using GPT-5.2 Vision with multi-pass verification"""
+    
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OCR service not configured")
+    
+    # Use multi-pass extraction for better accuracy
+    result = await extract_with_retry(image_base64, document_type, api_key)
+    return result
+
+
+# ========== LEGACY SINGLE EXTRACTION (kept for reference) ==========
+
+async def extract_document_info_legacy(image_base64: str, document_type: Optional[str] = None) -> Dict[str, Any]:
+    """Legacy single-pass extraction"""
     
     api_key = os.environ.get('EMERGENT_LLM_KEY')
     if not api_key:
