@@ -530,25 +530,25 @@ async def extract_document_info(image_base64: str, document_type: Optional[str] 
     Cost: ~$0.001/extraction (Tesseract) or ~$0.02/extraction (GPT fallback)
     """
     try:
-        if use_gpt_fallback:
-            from ocr_engine import extract_with_gpt_fallback
-            result = await extract_with_gpt_fallback(image_base64, document_type)
-        else:
-            result = await extract_document(image_base64, document_type)
+        # Use the Tesseract-based implementation from ocr_engine.py
+        result = await extract_document(image_base64, document_type)
         
+        # Convert ExtractionResult object to dictionary
         return {
             "document_type": result.document_type,
             "extracted_data": result.extracted_data,
             "confidence": result.confidence,
-            "extraction_method": result.extraction_method,
-            "quality_score": result.quality_score,
-            "preprocessing_used": result.preprocessing_used,
-            "suggestions": result.suggestions,
+            "extraction_method": getattr(result, 'extraction_method', 'tesseract'),
+            "quality_score": getattr(result, 'quality_score', 0.0),
+            "preprocessing_used": getattr(result, 'preprocessing_used', ''),
+            "suggestions": getattr(result, 'suggestions', []),
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logging.error(f"OCR extraction error: {e}")
+        import traceback
+        logging.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"OCR processing failed: {str(e)}")
 
 # ========== AUTH ENDPOINTS ==========
