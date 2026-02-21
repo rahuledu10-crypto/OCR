@@ -530,8 +530,11 @@ async def extract_document_info(image_base64: str, document_type: Optional[str] 
     Cost: ~$0.001/extraction (Tesseract) or ~$0.02/extraction (GPT fallback)
     """
     try:
+        # Import with alias to avoid naming conflict
+        from ocr_engine import extract_document as ocr_extract
+        
         # Use the Tesseract-based implementation from ocr_engine.py
-        result = await extract_document(image_base64, document_type)
+        result = await ocr_extract(image_base64, document_type)
         
         # Convert ExtractionResult object to dictionary
         return {
