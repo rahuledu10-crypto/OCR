@@ -329,18 +329,20 @@ Return ONLY valid JSON with extracted data."""
         
         # Parse the response
         import json
-        import re
         
         # Try to extract JSON from the response
         json_match = re.search(r'\{[\s\S]*\}', response)
         if json_match:
             result = json.loads(json_match.group())
+            # Apply post-processing validation
+            result = post_process_extraction(result)
             return result
         else:
             return {
                 "document_type": "unknown",
                 "extracted_data": {"raw_text": response},
-                "confidence": 0.5
+                "confidence": 0.3,
+                "extraction_notes": "Could not parse structured response"
             }
             
     except Exception as e:
