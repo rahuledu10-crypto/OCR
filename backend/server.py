@@ -176,24 +176,20 @@ async def extract_document_info(image_base64: str, document_type: Optional[str] 
     Universal Document Extractor
     
     Supports: Aadhaar, PAN, DL, Passport, Voter ID, and general documents
-    Engine: Tesseract with multi-pass preprocessing
-    Fallback: GPT Vision for difficult images (optional)
+    Engine: Gemini 3 Flash Vision
     
-    Cost: ~$0.001/extraction (Tesseract) or ~$0.02/extraction (GPT fallback)
+    Cost: ~$0.00165/extraction (1000 extractions = ~$1.65)
     """
     try:
-        # Import with alias to avoid naming conflict
-        from ocr_engine import extract_document as ocr_extract
-        
-        # Use the Tesseract-based implementation from ocr_engine.py
-        result = await ocr_extract(image_base64, document_type)
+        # Use the Gemini 3 Flash Vision implementation from ocr_engine.py
+        result = await ocr_extract_document(image_base64, document_type)
         
         # Convert ExtractionResult object to dictionary
         return {
             "document_type": result.document_type,
             "extracted_data": result.extracted_data,
             "confidence": result.confidence,
-            "extraction_method": getattr(result, 'extraction_method', 'tesseract'),
+            "extraction_method": getattr(result, 'extraction_method', 'gemini_flash'),
             "quality_score": getattr(result, 'quality_score', 0.0),
             "preprocessing_used": getattr(result, 'preprocessing_used', ''),
             "suggestions": getattr(result, 'suggestions', []),
