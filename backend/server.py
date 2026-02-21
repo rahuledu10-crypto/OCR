@@ -502,8 +502,6 @@ Return ONLY valid JSON with extracted data."""
         response = await chat.send_message(user_message)
         
         # Parse the response
-        import json
-        
         # Try to extract JSON from the response
         json_match = re.search(r'\{[\s\S]*\}', response)
         if json_match:
