@@ -450,15 +450,18 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
     # First pass - standard extraction
     result1 = await single_extraction(image_base64, document_type, api_key, pass_num=1)
     conf1 = result1.get("confidence", 0)
+    logging.info(f"Pass 1 - Aadhaar: {result1.get('extracted_data', {}).get('aadhaar_number', 'N/A')}, Confidence: {conf1}")
     
-    # If confidence is very high, return immediately
-    if conf1 >= 0.85:
-        result1["extraction_method"] = "single_pass_high_confidence"
+    # ALWAYS do at least 2 passes for ID verification - models are often overconfident
+    # Only skip if confidence is extremely high (>0.95)
+    if conf1 >= 0.95:
+        result1["extraction_method"] = "single_pass_very_high_confidence"
         return result1
     
     # Second pass - digit-focused
     result2 = await single_extraction(image_base64, document_type, api_key, pass_num=2)
     conf2 = result2.get("confidence", 0)
+    logging.info(f"Pass 2 - Aadhaar: {result2.get('extracted_data', {}).get('aadhaar_number', 'N/A')}, Confidence: {conf2}")
     
     # Check if both passes agree
     num1 = result1.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
@@ -474,21 +477,14 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
     # Disagreement - do a third verification pass
     result3 = await single_extraction(image_base64, document_type, api_key, pass_num=3)
     num3 = result3.get("extracted_data", {}).get("aadhaar_number", "").replace(" ", "")
+    logging.info(f"Pass 3 - Aadhaar: {result3.get('extracted_data', {}).get('aadhaar_number', 'N/A')}")
     
-    # Voting: pick the number that appears most often
-    numbers = [num1, num2, num3]
-    number_counts = {}
-    for n in numbers:
-        if len(n) == 12:
-            number_counts[n] = number_counts.get(n, 0) + 1
+    # Compare digit by digit and use consensus
+    final_number = consensus_digit_voting(num1, num2, num3)
+    logging.info(f"Consensus result: {final_number}")
     
-    if number_counts:
-        # Get the most common number
-        best_number = max(number_counts, key=number_counts.get)
-        votes = number_counts[best_number]
-        
-        # Format it properly
-        formatted = f"{best_number[:4]} {best_number[4:8]} {best_number[8:12]}"
+    if len(final_number) == 12:
+        formatted = f"{final_number[:4]} {final_number[4:8]} {final_number[8:12]}"
         
         return {
             "document_type": "aadhaar",
@@ -496,13 +492,13 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
                 "aadhaar_number": formatted,
                 **{k: v for k, v in result2.get("extracted_data", {}).items() if k != "aadhaar_number"}
             },
-            "confidence": round(0.5 + (votes * 0.15), 2),
-            "extraction_method": "triple_pass_voting",
+            "confidence": 0.85,  # Moderate confidence for consensus
+            "extraction_method": "triple_pass_digit_consensus",
             "extraction_details": {
-                "pass1": num1,
-                "pass2": num2,
-                "pass3": num3,
-                "votes": votes
+                "pass1": f"{num1[:4]} {num1[4:8]} {num1[8:12]}" if len(num1) == 12 else num1,
+                "pass2": f"{num2[:4]} {num2[4:8]} {num2[8:12]}" if len(num2) == 12 else num2,
+                "pass3": f"{num3[:4]} {num3[4:8]} {num3[8:12]}" if len(num3) == 12 else num3,
+                "consensus": formatted
             }
         }
     
@@ -510,6 +506,70 @@ async def extract_with_retry(image_base64: str, document_type: Optional[str], ap
     best_result = max([result1, result2, result3], key=lambda r: r.get("confidence", 0))
     best_result["extraction_method"] = "triple_pass_best_confidence"
     return best_result
+
+def consensus_digit_voting(num1: str, num2: str, num3: str) -> str:
+    """Vote on each digit position across 3 extraction passes"""
+    
+    # Ensure all have 12 digits, pad if needed
+    nums = []
+    for n in [num1, num2, num3]:
+        clean = n.replace(" ", "")
+        if len(clean) == 12:
+            nums.append(clean)
+    
+    if len(nums) < 2:
+        # Not enough valid extractions
+        return num1.replace(" ", "") if len(num1.replace(" ", "")) == 12 else ""
+    
+    result = []
+    for i in range(12):
+        digits = [n[i] for n in nums]
+        
+        # Count votes
+        counts = {}
+        for d in digits:
+            counts[d] = counts.get(d, 0) + 1
+        
+        # Get the most common digit
+        best_digit = max(counts, key=counts.get)
+        
+        # If there's a tie or disagreement, apply confusion rules
+        if counts[best_digit] < 2 and len(nums) >= 2:
+            # Apply confusion correction
+            # Common confusions: 5↔9, 3↔8, 0↔6
+            corrected = apply_confusion_correction(digits)
+            result.append(corrected)
+        else:
+            result.append(best_digit)
+    
+    return "".join(result)
+
+def apply_confusion_correction(digits: list) -> str:
+    """Apply heuristics for commonly confused digits"""
+    
+    # Count each digit
+    counts = {}
+    for d in digits:
+        counts[d] = counts.get(d, 0) + 1
+    
+    # If we see both members of a confused pair, prefer certain ones based on context
+    confused_pairs = [
+        ('5', '9'),  # In Aadhaar, both are equally likely
+        ('3', '8'),
+        ('0', '6'),
+        ('2', '7'),
+    ]
+    
+    for d1, d2 in confused_pairs:
+        if d1 in counts and d2 in counts:
+            # Tie between confused pair - need more context
+            # For now, return the one that appears more
+            if counts.get(d1, 0) >= counts.get(d2, 0):
+                return d1
+            return d2
+    
+    # Return most common
+    return max(counts, key=counts.get)
 
 # ========== MAIN OCR FUNCTION ==========
 
