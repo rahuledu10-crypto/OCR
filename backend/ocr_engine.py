@@ -200,14 +200,20 @@ def extract_aadhaar_fields(text: str, text_blocks: List[Dict]) -> Dict[str, Any]
     # Extract Aadhaar number
     # Look through all text blocks for 12-digit number
     for block in text_blocks:
-        block_text = block['text'].replace(' ', '')
-        match = AADHAAR_PATTERN.search(block_text)
-        if match:
-            aadhaar_num = match.group().replace(' ', '')
-            # Format with spaces
-            fields['aadhaar_number'] = f"{aadhaar_num[:4]} {aadhaar_num[4:8]} {aadhaar_num[8:12]}"
-            fields['aadhaar_confidence'] = block['confidence']
-            break
+        try:
+            if not isinstance(block, dict):
+                continue
+            block_text = str(block.get('text', '')).replace(' ', '')
+            match = AADHAAR_PATTERN.search(block_text)
+            if match:
+                aadhaar_num = match.group().replace(' ', '')
+                # Format with spaces
+                fields['aadhaar_number'] = f"{aadhaar_num[:4]} {aadhaar_num[4:8]} {aadhaar_num[8:12]}"
+                fields['aadhaar_confidence'] = block.get('confidence', 0)
+                break
+        except Exception as e:
+            logger.warning(f"Error parsing block: {e}")
+            continue
     
     # If not found in blocks, try full text
     if 'aadhaar_number' not in fields:
