@@ -158,50 +158,140 @@ async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-
     
     return api_key
 
+# ========== VALIDATION PATTERNS ==========
+import re
+
+VALIDATION_PATTERNS = {
+    "aadhaar_number": r"^\d{4}\s?\d{4}\s?\d{4}$",  # 12 digits with optional spaces
+    "pan_number": r"^[A-Z]{5}[0-9]{4}[A-Z]$",  # 5 letters + 4 digits + 1 letter
+    "dl_number": r"^[A-Z]{2}[0-9]{2}\s?[0-9]{4}\s?[0-9]{7}$",  # State code + year + number
+}
+
+def validate_field(field_name: str, value: str) -> tuple[bool, float]:
+    """Validate extracted field against known patterns. Returns (is_valid, confidence_adjustment)"""
+    if not value or not isinstance(value, str):
+        return False, -0.3
+    
+    # Clean the value
+    clean_value = value.strip().upper()
+    
+    if field_name == "aadhaar_number":
+        # Remove spaces and check 12 digits
+        digits_only = re.sub(r'\s', '', clean_value)
+        if re.match(r"^\d{12}$", digits_only):
+            return True, 0.1
+        return False, -0.4
+    
+    elif field_name == "pan_number":
+        if re.match(VALIDATION_PATTERNS["pan_number"], clean_value):
+            # Additional PAN validation: 4th char indicates holder type
+            if clean_value[3] in ['P', 'C', 'H', 'F', 'A', 'T', 'B', 'L', 'J', 'G']:
+                return True, 0.15
+        return False, -0.4
+    
+    elif field_name == "dl_number":
+        # DL formats vary by state, basic check for alphanumeric
+        if len(clean_value) >= 10 and re.match(r"^[A-Z]{2}", clean_value):
+            return True, 0.1
+        return False, -0.2
+    
+    elif field_name == "date_of_birth":
+        # Check common date formats
+        date_patterns = [
+            r"^\d{2}/\d{2}/\d{4}$",  # DD/MM/YYYY
+            r"^\d{2}-\d{2}-\d{4}$",  # DD-MM-YYYY
+            r"^\d{4}-\d{2}-\d{2}$",  # YYYY-MM-DD
+        ]
+        for pattern in date_patterns:
+            if re.match(pattern, clean_value):
+                return True, 0.05
+        return False, -0.1
+    
+    elif field_name == "gender":
+        if clean_value in ["MALE", "FEMALE", "M", "F", "OTHER"]:
+            return True, 0.05
+        return False, -0.1
+    
+    return True, 0  # Unknown fields pass through
+
+def post_process_extraction(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate and adjust confidence based on field validation"""
+    extracted_data = result.get("extracted_data", {})
+    base_confidence = result.get("confidence", 0.5)
+    
+    validation_results = {}
+    confidence_adjustments = 0
+    fields_validated = 0
+    
+    for field_name, value in extracted_data.items():
+        if isinstance(value, str):
+            is_valid, adjustment = validate_field(field_name, value)
+            validation_results[field_name] = {
+                "value": value,
+                "valid": is_valid
+            }
+            confidence_adjustments += adjustment
+            fields_validated += 1
+    
+    # Calculate final confidence
+    if fields_validated > 0:
+        avg_adjustment = confidence_adjustments / fields_validated
+        final_confidence = max(0, min(1, base_confidence + avg_adjustment))
+    else:
+        final_confidence = base_confidence
+    
+    result["confidence"] = round(final_confidence, 2)
+    result["field_validations"] = validation_results
+    
+    return result
+
 # ========== OCR EXTRACTION LOGIC ==========
 
 async def extract_document_info(image_base64: str, document_type: Optional[str] = None) -> Dict[str, Any]:
-    """Extract information from document image using GPT-5.2 Vision"""
+    """Extract information from document image using GPT-5.2 Vision with validation"""
     
     api_key = os.environ.get('EMERGENT_LLM_KEY')
     if not api_key:
         raise HTTPException(status_code=500, detail="OCR service not configured")
     
     system_prompt = """You are an expert OCR system specialized in extracting information from Indian identity documents.
-    
-For each document type, extract the following fields:
+Your extractions must be PRECISE and follow exact formats.
 
-AADHAAR CARD:
-- aadhaar_number: 12-digit number (format: XXXX XXXX XXXX)
+CRITICAL RULES:
+1. Only extract text you can clearly read - never guess or hallucinate
+2. If a field is unclear or partially visible, mark it as "unclear" 
+3. Verify numbers by checking digit count before outputting
+4. For confidence: 0.9+ only if ALL fields are clearly readable
+
+AADHAAR CARD - Required fields:
+- aadhaar_number: EXACTLY 12 digits (format: XXXX XXXX XXXX). Count digits carefully!
+- name: Full name in CAPITAL LETTERS as shown
+- date_of_birth: DD/MM/YYYY format only
+- gender: "Male" or "Female" only
+- address: Complete address if visible, else "not visible"
+
+PAN CARD - Required fields:
+- pan_number: EXACTLY 10 characters (format: ABCDE1234F - 5 letters, 4 digits, 1 letter)
 - name: Full name as shown
-- date_of_birth: DOB in DD/MM/YYYY format
-- gender: Male/Female
-- address: Complete address if visible
+- father_name: Father's name as shown
+- date_of_birth: DD/MM/YYYY format
 
-PAN CARD:
-- pan_number: 10-character alphanumeric (format: ABCDE1234F)
+DRIVING LICENSE - Required fields:
+- dl_number: Full license number with state code (e.g., MH0220190001234)
 - name: Full name as shown
-- father_name: Father's name
-- date_of_birth: DOB in DD/MM/YYYY format
-
-DRIVING LICENSE:
-- dl_number: License number
-- name: Full name
-- date_of_birth: DOB
-- validity: Valid until date
+- date_of_birth: DD/MM/YYYY format
+- issue_date: Issue date if visible
+- validity: Valid until date (DD/MM/YYYY)
+- vehicle_class: Categories like LMV, MCWG, etc.
 - address: Address if visible
-- vehicle_class: License class/categories
 
-GENERAL OCR (for other documents):
-- Extract all visible text fields as key-value pairs
-
-Return a JSON object with:
-1. "document_type": detected document type (aadhaar/pan/dl/other)
-2. "extracted_data": object with all extracted fields
-3. "confidence": confidence score between 0 and 1
-4. "raw_text": any additional text found
-
-If you cannot identify the document or extract data, return document_type as "unknown" with confidence 0."""
+OUTPUT FORMAT (strict JSON):
+{
+  "document_type": "aadhaar" | "pan" | "dl" | "other" | "unknown",
+  "extracted_data": { ... fields as above ... },
+  "confidence": 0.0 to 1.0,
+  "extraction_notes": "any issues or unclear areas"
+}"""
 
     try:
         chat = LlmChat(
@@ -210,10 +300,27 @@ If you cannot identify the document or extract data, return document_type as "un
             system_message=system_prompt
         ).with_model("openai", "gpt-5.2")
         
-        prompt = f"Extract information from this document image. "
+        # More specific prompt based on document type
         if document_type and document_type != "auto":
-            prompt += f"The document is expected to be a {document_type.upper()}. "
-        prompt += "Return the extracted data as a valid JSON object."
+            prompt = f"""Analyze this {document_type.upper()} document image carefully.
+
+STEP 1: Identify if this is actually a {document_type.upper()} document
+STEP 2: Locate each required field on the document
+STEP 3: Extract text character-by-character for ID numbers
+STEP 4: Verify the format matches expected pattern
+STEP 5: Assign confidence based on clarity
+
+Return ONLY valid JSON with extracted data."""
+        else:
+            prompt = """Analyze this document image carefully.
+
+STEP 1: Identify the document type (Aadhaar/PAN/DL/Other)
+STEP 2: Locate each required field for that document type
+STEP 3: Extract text character-by-character for ID numbers
+STEP 4: Verify formats match expected patterns
+STEP 5: Assign confidence based on clarity
+
+Return ONLY valid JSON with extracted data."""
         
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(text=prompt, file_contents=[image_content])
