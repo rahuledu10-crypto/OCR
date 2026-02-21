@@ -83,6 +83,8 @@ class OCRResponse(BaseModel):
     confidence: float
     processing_time_ms: int
     timestamp: str
+    field_validations: Optional[Dict[str, Any]] = None
+    extraction_notes: Optional[str] = None
 
 class UsageStats(BaseModel):
     model_config = ConfigDict(extra="ignore")
