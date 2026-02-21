@@ -371,13 +371,6 @@ Return JSON with your final answer."""
             system_message=system_prompt
         ).with_model("openai", "gpt-5.2")
         
-    try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"ocr_pass{pass_num}_{uuid.uuid4()}",
-            system_message=system_prompt
-        ).with_model("openai", "gpt-5.2")
-        
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(text=prompt, file_contents=[image_content])
         
