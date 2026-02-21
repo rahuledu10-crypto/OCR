@@ -387,12 +387,18 @@ async def extract_document(image_base64: str, document_type: Optional[str] = Non
     Returns:
         ExtractionResult with extracted data
     """
+    import traceback
+    
     try:
+        logger.info(f"Starting extraction, document_type hint: {document_type}")
+        
         # Preprocess image
         image_array = preprocess_image(image_base64)
+        logger.info(f"Image preprocessed, shape: {image_array.shape}")
         
         # Extract text using PaddleOCR
         full_text, avg_confidence, text_blocks = extract_text_with_paddle(image_array)
+        logger.info(f"Text extracted: {len(full_text)} chars, {len(text_blocks)} blocks")
         
         if not full_text:
             return ExtractionResult(
@@ -405,9 +411,14 @@ async def extract_document(image_base64: str, document_type: Optional[str] = Non
         
         # Detect document type if not specified
         if document_type and document_type != "auto":
-            doc_type = DocumentType(document_type)
+            try:
+                doc_type = DocumentType(document_type)
+            except ValueError:
+                doc_type = detect_document_type(full_text)
         else:
             doc_type = detect_document_type(full_text)
+        
+        logger.info(f"Document type detected: {doc_type}")
         
         # Extract fields based on document type
         if doc_type == DocumentType.AADHAAR:
