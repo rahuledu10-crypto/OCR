@@ -54,17 +54,24 @@ const LandingPage = () => {
 
   const pricingPlans = [
     {
+      name: "Free",
+      price: "₹0",
+      period: "/month",
+      requests: "100 extractions",
+      features: ["Aadhaar, PAN, DL supported", "API access", "Dashboard access"]
+    },
+    {
       name: "Starter",
-      price: "$49",
+      price: "₹499",
       period: "/month",
       requests: "1,000 extractions",
       features: ["All document types", "Standard support", "99.5% uptime SLA"]
     },
     {
       name: "Growth",
-      price: "$199",
+      price: "₹1,999",
       period: "/month",
-      requests: "10,000 extractions",
+      requests: "5,000 extractions",
       features: ["All document types", "Priority support", "99.9% uptime SLA", "Custom rate limits"],
       popular: true
     },
@@ -73,7 +80,7 @@ const LandingPage = () => {
       price: "Custom",
       period: "",
       requests: "Unlimited extractions",
-      features: ["All document types", "24/7 dedicated support", "99.99% uptime SLA", "Custom integrations", "On-premise deployment"]
+      features: ["All document types", "24/7 dedicated support", "99.99% uptime SLA", "Custom integrations", "WhatsApp integration"]
     }
   ];
 
@@ -277,7 +284,7 @@ const LandingPage = () => {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {pricingPlans.map((plan, index) => (
               <motion.div
                 key={plan.name}
@@ -358,7 +365,7 @@ const LandingPage = () => {
               <span className="font-heading font-bold">ExtractAI</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              &copy; 2024 ExtractAI. All rights reserved.
+              &copy; 2026 ExtractAI. All rights reserved.
             </p>
           </div>
         </div>
