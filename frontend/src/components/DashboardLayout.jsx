@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { 
@@ -13,9 +14,12 @@ import {
   Menu,
   X,
   ChevronRight,
-  HelpCircle
+  HelpCircle,
+  Zap
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const navItems = [
   { path: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -27,14 +31,40 @@ const navItems = [
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const [subscription, setSubscription] = useState(null);
+  const { user, logout, getAuthHeaders } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Fetch subscription data for usage badge
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const response = await axios.get(`${API}/subscription`, { 
+          headers: getAuthHeaders() 
+        });
+        setSubscription(response.data);
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error);
+      }
+    };
+    fetchSubscription();
+  }, [getAuthHeaders]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  // Calculate remaining extractions
+  const getRemainingExtractions = () => {
+    if (!subscription?.usage) return null;
+    const { extractions_used, extractions_limit } = subscription.usage;
+    if (extractions_limit === null) return 'Unlimited';
+    return extractions_limit - extractions_used;
+  };
+
+  const remaining = getRemainingExtractions();
 
   const isActive = (item) => {
     if (item.exact) {
@@ -150,7 +180,28 @@ const DashboardLayout = () => {
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex-1" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Credits/Usage Badge */}
+            {subscription && (
+              <div 
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
+                data-testid="credits-badge"
+              >
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">
+                  {remaining === 'Unlimited' ? (
+                    <span className="text-primary">Unlimited</span>
+                  ) : remaining !== null ? (
+                    <>
+                      <span className={remaining <= 20 ? 'text-yellow-500' : 'text-primary'}>
+                        {remaining}
+                      </span>
+                      <span className="text-muted-foreground"> left</span>
+                    </>
+                  ) : null}
+                </span>
+              </div>
+            )}
             <Link to="/dashboard/docs">
               <Button variant="ghost" size="sm" data-testid="header-docs-btn">
                 <BookOpen className="w-4 h-4 mr-2" />

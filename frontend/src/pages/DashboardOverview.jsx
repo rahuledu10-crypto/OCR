@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import OnboardingFlow from '../components/OnboardingFlow';
+import PlanUpgradeModal from '../components/PlanUpgradeModal';
 import { 
   FileText, 
   Key, 
@@ -17,7 +18,8 @@ import {
   Clock,
   Zap,
   CreditCard,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -30,6 +32,7 @@ const DashboardOverview = () => {
   const [apiKeys, setApiKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -169,80 +172,132 @@ const DashboardOverview = () => {
         ))}
       </div>
 
-      {/* Usage & Plan Card */}
+      {/* Usage & Plan Card - Enhanced */}
       {subscription && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="bg-card/50 backdrop-blur border-border/50">
+          <Card className="bg-card/50 backdrop-blur border-border/50 overflow-hidden">
             <CardContent className="pt-6">
-              <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                {/* Plan Info */}
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-heading font-semibold text-lg">{subscription.plan_details?.name || 'Free'} Plan</span>
-                      {subscription.plan === 'free' && (
-                        <span className="px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-500 rounded-full">Limited</span>
-                      )}
+              <div className="flex flex-col gap-6">
+                {/* Top Row: Plan Info + Usage Meter */}
+                <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                  {/* Plan Info */}
+                  <div className="flex items-center gap-4 lg:w-1/4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <Zap className="w-6 h-6 text-primary" />
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {subscription.plan_details?.price_inr ? `₹${subscription.plan_details.price_inr}/month` : 'Free tier'}
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-heading font-semibold text-lg">{subscription.plan_details?.name || 'Free'} Plan</span>
+                        {subscription.plan === 'free' && (
+                          <span className="px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-500 rounded-full">Limited</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {subscription.plan_details?.price_inr ? `₹${subscription.plan_details.price_inr}/month` : 'Free tier'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Usage Progress Bar - Enhanced */}
+                  <div className="flex-1 lg:px-6">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Monthly Usage</span>
+                      <span className="font-semibold text-foreground" data-testid="usage-counter">
+                        {subscription.usage?.extractions_used || 0} / {subscription.usage?.extractions_limit || 100} extractions
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Progress 
+                        value={subscription.usage?.extractions_limit ? 
+                          Math.min(((subscription.usage?.extractions_used || 0) / subscription.usage.extractions_limit) * 100, 100) : 0
+                        } 
+                        className="h-3"
+                        data-testid="usage-progress-bar"
+                      />
+                      {/* Usage percentage markers */}
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-muted-foreground">0%</span>
+                        <span className="text-xs text-muted-foreground">50%</span>
+                        <span className="text-xs text-muted-foreground">100%</span>
+                      </div>
+                    </div>
+                    {subscription.usage?.remaining !== null && subscription.usage?.remaining <= 20 && (
+                      <p className="text-xs text-yellow-500 mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {subscription.usage.remaining <= 0 
+                          ? 'Plan limit reached! Upgrade or add wallet funds to continue.'
+                          : `Only ${subscription.usage.remaining} extractions remaining`
+                        }
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Wallet Balance */}
+                  <div className="flex items-center gap-4 lg:w-auto">
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Wallet Balance</p>
+                      <p className="text-xl font-bold">₹{(subscription.wallet_balance || 0).toFixed(2)}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="shrink-0"
+                      data-testid="add-funds-btn"
+                      onClick={() => setShowUpgradeModal(true)}
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Add Funds
+                    </Button>
                   </div>
                 </div>
 
-                {/* Usage Progress */}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Extractions Used</span>
-                    <span className="font-medium">
-                      {subscription.usage?.extractions_used || 0} / {subscription.usage?.extractions_limit || 100}
-                    </span>
+                {/* Bottom Row: Upgrade CTA */}
+                {(subscription.plan === 'free' || (subscription.usage?.remaining !== null && subscription.usage?.remaining <= 20)) && (
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {subscription.usage?.remaining <= 0 
+                              ? 'Unlock more extractions today!'
+                              : 'Get more extractions at better rates'
+                            }
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Starter plan: 1,000 extractions for just ₹499/month
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        className="bg-primary hover:bg-primary/90 shrink-0"
+                        onClick={() => setShowUpgradeModal(true)}
+                        data-testid="upgrade-plan-btn"
+                      >
+                        Upgrade Plan
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
                   </div>
-                  <Progress 
-                    value={subscription.usage?.extractions_limit ? 
-                      ((subscription.usage?.extractions_used || 0) / subscription.usage.extractions_limit) * 100 : 0
-                    } 
-                    className="h-2"
-                  />
-                  {subscription.usage?.remaining !== null && subscription.usage?.remaining <= 20 && (
-                    <p className="text-xs text-yellow-500 mt-2 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Only {subscription.usage.remaining} extractions remaining
-                    </p>
-                  )}
-                </div>
-
-                {/* Wallet Balance */}
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Wallet Balance</p>
-                    <p className="text-xl font-bold">₹{(subscription.wallet_balance || 0).toFixed(2)}</p>
-                  </div>
-                  <Button variant="outline" size="sm" className="shrink-0">
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Add Funds
-                  </Button>
-                </div>
-
-                {/* Upgrade Button */}
-                {subscription.plan === 'free' && (
-                  <Button className="bg-primary hover:bg-primary/90 shrink-0">
-                    Upgrade Plan
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
         </motion.div>
       )}
+
+      {/* Plan Upgrade Modal */}
+      <PlanUpgradeModal 
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={subscription?.plan || 'free'}
+      />
 
       {/* Document Breakdown & Recent Activity */}
       <div className="grid lg:grid-cols-2 gap-6">

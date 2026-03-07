@@ -1,0 +1,84 @@
+{
+  "summary": "Frontend-only testing completed for 3 new billing UI features. All 10 test cases PASSED (100%). Tested: Plan Upgrade Modal, Usage Meter, Credits Badge in navbar. All features working as expected.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": {
+    "credits_badge": [
+      "Credits badge [data-testid='credits-badge'] visible in top navbar",
+      "Shows '100 left' for new user on free plan"
+    ],
+    "usage_meter": [
+      "Usage counter [data-testid='usage-counter'] shows '0 / 100 extractions' format",
+      "Progress bar [data-testid='usage-progress-bar'] present",
+      "Progress bar has 0%, 50%, 100% percentage markers"
+    ],
+    "plan_upgrade_modal": [
+      "Modal opens when clicking 'Upgrade Plan' button [data-testid='upgrade-plan-btn']",
+      "All 4 plans displayed: Free (₹0), Starter (₹499), Growth (₹1,999), Enterprise (Custom)",
+      "'Current Plan' badge shown on Free tier for new users",
+      "'Most Popular' badge shown on Growth plan",
+      "Modal closes via X button [data-testid='close-upgrade-modal']",
+      "Modal closes via backdrop click"
+    ],
+    "subscribe_button_mocked": [
+      "Subscribe button [data-testid='subscribe-starter-btn'] clickable",
+      "Shows toast: 'Plan upgrade to starter initiated! Payment integration coming soon.' (MOCKED)"
+    ],
+    "support_link": [
+      "Support link visible in sidebar with mailto:support@extractai.in"
+    ]
+  },
+
+  "test_report_links": [
+    "/app/test_reports/iteration_5.json"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "All data-testid attributes properly implemented for testing",
+    "Modal animation smooth with framer-motion",
+    "Usage meter correctly fetches subscription data from /api/subscription",
+    "Plan pricing correctly displayed with proper formatting (₹1,999 not ₹1999)"
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "backend": "N/A (frontend-only testing requested)",
+    "frontend": "100% (10/10 tests passed)"
+  },
+
+  "test_credentials": {
+    "test_user": "test_billing_f2axaosw@test.com (created during testing)"
+  },
+
+  "seed_data_creation": "New test user created during Playwright testing",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Frontend billing UI features fully tested and working. Plan Upgrade Modal is MOCKED - subscribe button shows toast message instead of real payment flow. Usage meter shows 0/100 extractions for new free tier users. Credits badge in navbar shows remaining extractions.",
+
+  "mocked_apis": {
+    "subscribe_buttons": "Shows toast 'Plan upgrade to [plan] initiated! Payment integration coming soon.' - real Razorpay integration pending",
+    "enterprise_contact": "Opens mailto:sales@extractai.in instead of payment flow"
+  },
+
+  "features_verified": {
+    "plan_upgrade_modal": "WORKING - Opens, shows 4 plans, close via X and backdrop",
+    "usage_meter": "WORKING - Shows X/Y extractions with progress bar",
+    "credits_badge": "WORKING - Shows remaining extractions in navbar"
+  }
+}
