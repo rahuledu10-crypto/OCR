@@ -35,6 +35,9 @@ Build a universal OCR SaaS platform where users upload document images and extra
 - User auth (email/password + Google OAuth)
 - Dashboard, API keys, playground
 - Analytics with charts
+- **Plan Upgrade Modal** - 4 plans with Subscribe buttons (MOCKED)
+- **Usage Meter** - Progress bar showing "X / Y extractions used"
+- **Credits Badge** - Remaining extractions in top navbar
 - **Forgot Password** page
 - **404 Not Found** page
 - **Support link** in sidebar (mailto:support@extractai.in)
@@ -92,7 +95,7 @@ Build a universal OCR SaaS platform where users upload document images and extra
 
 ## Testing Status (March 7, 2026)
 - Backend Auth Tests: 20/20 PASSED (100%)
-- Frontend UI Tests: ALL PASSED
+- Frontend Billing UI Tests: 10/10 PASSED (100%)
 - E2E Integration: ALL PASSED
 
 ## Supported Document Types
@@ -117,7 +120,6 @@ Build a universal OCR SaaS platform where users upload document images and extra
 - [ ] Add real Razorpay keys for production
 
 ### P1 - Important
-- [ ] Frontend billing UI (plan upgrade, wallet top-up)
 - [ ] Enforce usage limits at OCR endpoint (currently checks exist)
 - [ ] Webhook management UI in dashboard
 - [ ] Configure SMTP for production emails
