@@ -4,6 +4,10 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import PublicDocsPage from "./pages/PublicDocsPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import GoogleCallbackPage from "./pages/GoogleCallbackPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardOverview from "./pages/DashboardOverview";
 import APIKeysPage from "./pages/APIKeysPage";
@@ -36,10 +40,16 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/docs" element={<PublicDocsPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+          
+          {/* Protected dashboard routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <DashboardLayout />
@@ -51,6 +61,9 @@ function App() {
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="docs" element={<DocsPage />} />
           </Route>
+
+          {/* 404 Catch-all route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         <Toaster position="top-right" richColors />
       </BrowserRouter>

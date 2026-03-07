@@ -8,6 +8,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from 'sonner';
 import { FileText, Loader2, Check } from 'lucide-react';
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -57,6 +58,20 @@ const RegisterPage = () => {
             <CardDescription>No credit card required • Setup in 2 minutes</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Google Login */}
+            <GoogleLoginButton />
+            
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+              </div>
+            </div>
+
+            {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="company">Company Name</Label>

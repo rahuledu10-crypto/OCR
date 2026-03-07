@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request, BackgroundTasks, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -7,6 +8,10 @@ import os
 import logging
 import json
 import re
+import httpx
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
@@ -37,6 +42,12 @@ JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 72  # 3 days for better UX
 
+# SMTP Configuration
+SMTP_HOST = os.environ.get('SMTP_HOST', '')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER = os.environ.get('SMTP_USER', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+
 # Create the main app
 app = FastAPI(title="OCR API System", version="1.0.0")
 api_router = APIRouter(prefix="/api")
@@ -46,12 +57,22 @@ security = HTTPBearer()
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
+    password: Optional[str] = None  # Optional for Google OAuth users
     company_name: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class GoogleSessionRequest(BaseModel):
+    session_id: str
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -204,6 +225,92 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 def generate_api_key() -> str:
     return f"ocr_{secrets.token_urlsafe(32)}"
+
+def generate_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+async def create_default_api_key(user_id: str) -> Dict[str, Any]:
+    """Create a default API key for new users"""
+    key = generate_api_key()
+    now = datetime.now(timezone.utc).isoformat()
+    
+    api_key_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "name": "Default Key",
+        "key": key,
+        "key_prefix": key[:12] + "...",
+        "rate_limit": 100,
+        "is_active": True,
+        "created_at": now,
+        "last_used": None,
+        "total_requests": 0
+    }
+    
+    await db.api_keys.insert_one(api_key_doc)
+    return api_key_doc
+
+async def send_welcome_email(email: str, name: str, api_key: str):
+    """Send welcome email with API key"""
+    if not SMTP_HOST or not SMTP_USER:
+        logging.warning("SMTP not configured, skipping welcome email")
+        return
+    
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "Welcome to ExtractAI - Your API Key is Ready!"
+        msg['From'] = SMTP_USER
+        msg['To'] = email
+        
+        html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #6366f1;">Welcome to ExtractAI!</h1>
+            </div>
+            
+            <p>Hi {name or 'there'},</p>
+            
+            <p>Your account is ready! You have <strong>100 free extractions</strong> to get started.</p>
+            
+            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0 0 10px 0; font-weight: bold;">Your API Key:</p>
+                <code style="background: #1f2937; color: #10b981; padding: 10px 15px; border-radius: 4px; display: block; word-break: break-all;">
+                    {api_key}
+                </code>
+            </div>
+            
+            <p>Quick start:</p>
+            <pre style="background: #1f2937; color: #e5e7eb; padding: 15px; border-radius: 8px; overflow-x: auto;">
+curl -X POST "https://api.extractai.in/api/v1/extract" \\
+  -H "X-API-Key: {api_key}" \\
+  -H "Content-Type: application/json" \\
+  -d '{{"image_base64": "...", "document_type": "auto"}}'
+            </pre>
+            
+            <p style="margin-top: 30px;">
+                <a href="https://extractai.in/dashboard" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                    Go to Dashboard
+                </a>
+            </p>
+            
+            <p style="color: #6b7280; font-size: 14px; margin-top: 40px;">
+                Questions? Reply to this email or contact us at support@extractai.in
+            </p>
+        </body>
+        </html>
+        """
+        
+        msg.attach(MIMEText(html, 'html'))
+        
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+        
+        logging.info(f"Welcome email sent to {email}")
+    except Exception as e:
+        logging.error(f"Failed to send welcome email: {e}")
 
 async def get_user_usage(user_id: str) -> Dict[str, Any]:
     """Get current month's usage for a user"""
@@ -378,7 +485,7 @@ async def extract_document_info(image_base64: str, document_type: Optional[str] 
 # ========== AUTH ENDPOINTS ==========
 
 @api_router.post("/auth/register", response_model=TokenResponse)
-async def register(user_data: UserCreate):
+async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
     # Check if user exists
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
@@ -387,15 +494,31 @@ async def register(user_data: UserCreate):
     user_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
+    # Password is optional for Google OAuth users
+    password_hash = hash_password(user_data.password) if user_data.password else None
+    
     user_doc = {
         "id": user_id,
         "email": user_data.email,
-        "password_hash": hash_password(user_data.password),
+        "password_hash": password_hash,
         "company_name": user_data.company_name,
-        "created_at": now
+        "created_at": now,
+        "plan": "free",
+        "wallet_balance": 0.0
     }
     
     await db.users.insert_one(user_doc)
+    
+    # Create default API key for new users
+    default_key = await create_default_api_key(user_id)
+    
+    # Send welcome email in background
+    background_tasks.add_task(
+        send_welcome_email, 
+        user_data.email, 
+        user_data.company_name or "", 
+        default_key["key"]
+    )
     
     token = create_jwt_token(user_id, user_data.email)
     
@@ -412,7 +535,14 @@ async def register(user_data: UserCreate):
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
-    if not user or not verify_password(credentials.password, user["password_hash"]):
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if user signed up with Google (no password)
+    if not user.get("password_hash"):
+        raise HTTPException(status_code=400, detail="Please sign in with Google")
+    
+    if not verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     token = create_jwt_token(user["id"], user["email"])
@@ -426,6 +556,213 @@ async def login(credentials: UserLogin):
             created_at=user["created_at"]
         )
     )
+
+# ========== GOOGLE OAUTH ENDPOINTS ==========
+# REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+
+@api_router.post("/auth/google/session")
+async def google_session(data: GoogleSessionRequest, background_tasks: BackgroundTasks):
+    """Exchange session_id from Emergent Auth for user data and JWT token"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+                headers={"X-Session-ID": data.session_id}
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=401, detail="Invalid session")
+            
+            google_data = response.json()
+    except httpx.RequestError as e:
+        logging.error(f"Google OAuth error: {e}")
+        raise HTTPException(status_code=500, detail="OAuth service unavailable")
+    
+    email = google_data.get("email")
+    name = google_data.get("name")
+    google_id = google_data.get("id")
+    picture = google_data.get("picture")
+    
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not provided by Google")
+    
+    # Check if user exists
+    existing_user = await db.users.find_one({"email": email}, {"_id": 0})
+    
+    if existing_user:
+        # Update google_id if not set
+        if not existing_user.get("google_id"):
+            await db.users.update_one(
+                {"id": existing_user["id"]},
+                {"$set": {"google_id": google_id, "picture": picture}}
+            )
+        
+        user_id = existing_user["id"]
+        is_new_user = False
+    else:
+        # Create new user
+        user_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        user_doc = {
+            "id": user_id,
+            "email": email,
+            "password_hash": None,  # Google users don't have password
+            "company_name": name,
+            "google_id": google_id,
+            "picture": picture,
+            "created_at": now,
+            "plan": "free",
+            "wallet_balance": 0.0
+        }
+        
+        await db.users.insert_one(user_doc)
+        
+        # Create default API key for new users
+        default_key = await create_default_api_key(user_id)
+        
+        # Send welcome email in background
+        background_tasks.add_task(
+            send_welcome_email, 
+            email, 
+            name or "", 
+            default_key["key"]
+        )
+        
+        is_new_user = True
+    
+    # Get updated user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    
+    token = create_jwt_token(user_id, email)
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "is_new_user": is_new_user,
+        "user": {
+            "id": user_id,
+            "email": email,
+            "company_name": user.get("company_name"),
+            "picture": picture,
+            "created_at": user["created_at"]
+        }
+    }
+
+# ========== FORGOT PASSWORD ENDPOINTS ==========
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest, background_tasks: BackgroundTasks):
+    """Send password reset email"""
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    
+    # Always return success to prevent email enumeration
+    if not user:
+        return {"message": "If an account exists with this email, a reset link will be sent"}
+    
+    # Check if user signed up with Google
+    if not user.get("password_hash") and user.get("google_id"):
+        return {"message": "This account uses Google Sign-In. Please use Google to login."}
+    
+    # Generate reset token
+    reset_token = generate_reset_token()
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    # Store reset token
+    await db.password_resets.insert_one({
+        "user_id": user["id"],
+        "token": reset_token,
+        "expires_at": expires_at.isoformat(),
+        "used": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Send reset email in background
+    if SMTP_HOST and SMTP_USER:
+        background_tasks.add_task(
+            send_reset_email,
+            data.email,
+            reset_token
+        )
+    
+    return {"message": "If an account exists with this email, a reset link will be sent"}
+
+async def send_reset_email(email: str, token: str):
+    """Send password reset email"""
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "Reset Your ExtractAI Password"
+        msg['From'] = SMTP_USER
+        msg['To'] = email
+        
+        # TODO: Update this URL to your actual frontend URL
+        reset_url = f"https://extractai.in/reset-password?token={token}"
+        
+        html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #6366f1;">Reset Your Password</h1>
+            
+            <p>You requested to reset your password. Click the button below to set a new password:</p>
+            
+            <p style="margin: 30px 0;">
+                <a href="{reset_url}" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                    Reset Password
+                </a>
+            </p>
+            
+            <p style="color: #6b7280; font-size: 14px;">
+                This link expires in 1 hour. If you didn't request this, please ignore this email.
+            </p>
+        </body>
+        </html>
+        """
+        
+        msg.attach(MIMEText(html, 'html'))
+        
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+        
+        logging.info(f"Reset email sent to {email}")
+    except Exception as e:
+        logging.error(f"Failed to send reset email: {e}")
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    """Reset password using token"""
+    # Find valid reset token
+    reset_doc = await db.password_resets.find_one({
+        "token": data.token,
+        "used": False
+    }, {"_id": 0})
+    
+    if not reset_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check expiry
+    expires_at = datetime.fromisoformat(reset_doc["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Update password
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"id": reset_doc["user_id"]},
+        {"$set": {"password_hash": new_hash}}
+    )
+    
+    # Mark token as used
+    await db.password_resets.update_one(
+        {"token": data.token},
+        {"$set": {"used": True}}
+    )
+    
+    return {"message": "Password reset successful"}
 
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(user: dict = Depends(get_current_user)):

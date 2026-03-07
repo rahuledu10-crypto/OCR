@@ -3,44 +3,46 @@
 ## Original Problem Statement
 Build a universal OCR SaaS platform where users upload document images and extract key information. B2B API product with billing, usage limits, and SDKs.
 
-## What's Been Implemented (Feb 21, 2026)
+## What's Been Implemented (March 7, 2026)
 
 ### Core OCR Engine
-- ✅ **Gemini 3 Flash Vision** - 17+ document types supported
-- ✅ ~₹0.14/extraction cost, selling at ₹0.20/extraction
+- **Gemini 3 Flash Vision** - 17+ document types supported
+- ~₹0.14/extraction cost, selling at ₹0.20/extraction
 
 ### Backend Features (FastAPI + MongoDB)
-- ✅ User authentication (JWT)
-- ✅ API key management (create, list, revoke)
-- ✅ OCR extraction `/api/v1/extract`
-- ✅ **Batch extraction** `/api/v1/batch-extract` (up to 10 docs)
-- ✅ **Usage limits** enforcement per plan
-- ✅ **Razorpay billing** (test mode)
+- User authentication (JWT)
+- **Google OAuth 2.0** (Emergent managed)
+- **Forgot Password** flow with email reset
+- **Welcome email** on registration
+- **Default API key** creation on registration
+- API key management (create, list, revoke)
+- OCR extraction `/api/v1/extract`
+- **Batch extraction** `/api/v1/batch-extract` (up to 10 docs)
+- **Usage limits** enforcement per plan
+- **Razorpay billing** (test mode - MOCKED)
   - Subscription orders & verification
   - Wallet top-up system
-- ✅ **Webhooks** system
+- **Webhooks** system
   - Configure webhook endpoints
   - HMAC signature support
   - Test webhook sending
-- ✅ Rate limiting per plan
+- Rate limiting per plan
 
 ### Frontend (React + Tailwind + Shadcn)
-- ✅ Landing page with industry-based solutions
-- ✅ Interactive "Built For Every Industry" section
-- ✅ Pricing in INR (Free, ₹499, ₹1,999, Custom)
-- ✅ User auth, dashboard, API keys, playground
-- ✅ Analytics with charts
-- ✅ Mobile responsive
+- Landing page with industry-based solutions
+- Interactive "Built For Every Industry" section
+- Pricing in INR (Free, ₹499, ₹1,999, Custom)
+- User auth (email/password + Google OAuth)
+- Dashboard, API keys, playground
+- Analytics with charts
+- **Forgot Password** page
+- **404 Not Found** page
+- **Support link** in sidebar (mailto:support@extractai.in)
+- Mobile responsive
 
 ### SDKs
-- ✅ **Python SDK** (`/app/sdks/python/`)
-  - `extractai.py` - Main client
-  - Proper error classes
-  - Batch support
-- ✅ **Node.js SDK** (`/app/sdks/nodejs/`)
-  - `index.js` - Main client
-  - TypeScript definitions
-  - Batch support
+- **Python SDK** (`/app/sdk/python/`)
+- **Node.js SDK** (`/app/sdk/nodejs/`)
 
 ### Pricing Plans
 | Plan | Price | Extractions | Rate Limit |
@@ -55,9 +57,12 @@ Build a universal OCR SaaS platform where users upload document images and extra
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
+- `POST /api/auth/register` - Email/password registration
+- `POST /api/auth/login` - Email/password login
+- `POST /api/auth/google/session` - Google OAuth session exchange
+- `POST /api/auth/forgot-password` - Send reset email
+- `POST /api/auth/reset-password` - Reset with token
+- `GET /api/auth/me` - Get current user
 
 ### API Keys
 - `GET, POST, DELETE /api/keys`
@@ -85,10 +90,10 @@ Build a universal OCR SaaS platform where users upload document images and extra
 - `GET /api/analytics/usage`
 - `GET /api/analytics/recent`
 
-## Testing Status
-- ✅ Backend: 34/34 tests passed (100%)
-- ✅ All new features tested
-- ✅ SDKs reviewed
+## Testing Status (March 7, 2026)
+- Backend Auth Tests: 20/20 PASSED (100%)
+- Frontend UI Tests: ALL PASSED
+- E2E Integration: ALL PASSED
 
 ## Supported Document Types
 - **ID Documents:** Aadhaar, PAN, DL, Passport, Voter ID
@@ -107,21 +112,42 @@ Build a universal OCR SaaS platform where users upload document images and extra
 
 ## Remaining Backlog
 
-### P1 - Next Up
-- [ ] Frontend billing UI (plan upgrade, wallet top-up)
+### P0 - Critical
+- [ ] Activate Razorpay Billing (replace MOCKED stubs with real integration)
 - [ ] Add real Razorpay keys for production
+
+### P1 - Important
+- [ ] Frontend billing UI (plan upgrade, wallet top-up)
+- [ ] Enforce usage limits at OCR endpoint (currently checks exist)
 - [ ] Webhook management UI in dashboard
+- [ ] Configure SMTP for production emails
 
 ### P2 - Future
 - [ ] WhatsApp integration
 - [ ] Publish SDKs to PyPI/npm
 - [ ] On-premise deployment option
 
+### Refactoring
+- [ ] Break `server.py` into modular route files (`/app/backend/routes/`)
+
 ## Key Files
-- `/app/backend/server.py` - Main API
+- `/app/backend/server.py` - Main API (1400+ lines)
 - `/app/backend/ocr_engine.py` - Gemini Vision
 - `/app/backend/plans.py` - Pricing config
-- `/app/backend/payments.py` - Razorpay
+- `/app/backend/payments.py` - Razorpay (MOCKED)
 - `/app/backend/webhooks.py` - Webhook system
-- `/app/sdks/python/` - Python SDK
-- `/app/sdks/nodejs/` - Node.js SDK
+- `/app/sdk/python/` - Python SDK
+- `/app/sdk/nodejs/` - Node.js SDK
+
+## 3rd Party Integrations
+| Integration | Status | Keys Required |
+|-------------|--------|---------------|
+| Gemini 3 Flash | Active | Emergent LLM Key (configured) |
+| Google OAuth | Active | Emergent managed (no user keys) |
+| Razorpay | **MOCKED** | Needs `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` |
+| SMTP Email | Inactive | Needs `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` |
+
+## Test Reports
+- `/app/test_reports/iteration_4.json`
+- `/app/test_reports/pytest/pytest_results_auth.xml`
+- `/app/backend/tests/test_auth_features.py`

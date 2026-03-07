@@ -1,154 +1,189 @@
 <analysis>**original_problem_statement:**
-The user wants to build an OCR (Optical Character Recognition) system that can be sold as an API to customers. The primary function is to upload an image of a document (like an Aadhaar card, PAN card, or Driver's License) and extract key information such as the document number. The system should also be capable of handling other advanced OCR use cases.
+The user wants to build a commercial OCR (Optical Character Recognition) API. The initial goal was to extract data from ID documents. The project has since evolved into a full-fledged SaaS platform named ExtractAI with a disruptive pricing model aimed at the Indian market.
+
+PRODUCT REQUIREMENTS:
+-   **Core Functionality**: An OCR API that can extract structured data from a wide variety of documents, including Indian IDs, invoices, cheques, bank statements, legal documents, and more.
+-   **Technology**: Use a powerful and cost-effective OCR engine (settled on Gemini 3 Flash).
+-   **User Management**: Support both email/password and Google Social Login. Include features like registration, login, forgot password, and welcome emails.
+-   **Billing & Subscriptions**: Implement a multi-tier pricing model (Free, Starter, Growth, Enterprise) with usage limits. Integrate a payment gateway (Razorpay) for subscriptions and top-ups.
+-   **Developer Experience**: Provide a user-friendly dashboard, an API playground, public API documentation, and downloadable SDKs (Python/Node.js).
+-   **UX & Onboarding**: A professional, conversion-focused landing page. A simple 3-step onboarding flow for new users to guide them to their first API call.
+-   **Advanced Features**: Support for batch processing and webhooks for asynchronous notifications.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a FastAPI backend and a React frontend has been created. The application supports user registration, login, and API key management. The frontend includes a landing page, a dashboard with an API playground for testing, and an analytics page.
-
-The core OCR functionality has gone through several iterations:
-1.  Initially built with GPT-5.2 Vision.
-2.  Attempted to switch to open-source models (PaddleOCR, EasyOCR) for cost and performance reasons, but they failed due to environment memory limitations (Out of Memory errors).
-3.  Switched to Tesseract OCR as a lightweight alternative, but it failed to produce accurate results on the user's real-world (blurry) test image.
-4.  Following user dissatisfaction with Tesseract's performance, the decision was made to revert back to the GPT-5.2 Vision implementation.
+A sophisticated full-stack OCR SaaS application.
+-   **Backend (FastAPI)**:
+    -   OCR engine powered by **Gemini 3 Flash**.
+    -   User authentication with JWT (email/password) and **Google OAuth 2.0**.
+    -   API key management with a default key created on registration.
+    -   **Forgot Password** flow with email-based token reset.
+    -   **Welcome emails** sent via SMTP on user registration.
+    -   Endpoints for multi-tier **plans**, **usage limits**, **batch processing**, and **webhooks**.
+    -   Placeholder integration for **Razorpay** billing.
+-   **Frontend (React)**:
+    -   A professional, conversion-optimized landing page featuring an interactive Solutions by Industry section, pricing tiers, and a Schedule a Demo button.
+    -   A comprehensive user dashboard displaying plan status, usage metrics, wallet balance, and API keys.
+    -   A guided 3-step **onboarding flow** for new users.
+    -   Login and registration pages with Continue with Google option.
+    -   A public, unauthenticated API documentation page.
+    -   A custom **404 Not Found** page.
+-   **SDKs**: Basic, downloadable SDKs for Python and Node.js have been created and are located in the  directory.
 
 **Last working item**:
-*   **Last item agent was working:** Reverting the OCR engine from Tesseract back to GPT-5.2 Vision.
-*   **Reasoning:** The user was unhappy with the poor results from Tesseract OCR on their test image and explicitly asked to retract back to chatgpt (interpreted as GPT-5.2 Vision). The agent is now actioning this request.
-*   **Status:** IN PROGRESS
-*   **Agent Testing Done:** N
-*   **Which testing method agent to use?** backend testing agent
-*   **User Testing Done:** N
+-   **Last item agent was working:** Implementing a batch of five key features:
+    1.  Google Social Login.
+    2.  Default API key creation on user registration.
+    3.  Forgot Password flow with email.
+    4.  Welcome email on registration.
+    5.  A 404 page and adding support contact info.
+-   **Status:** USER VERIFICATION PENDING
+-   **Agent Testing Done:** N (The agent wrote all the necessary backend and frontend code and performed visual verification with screenshots, but did not conduct functional, end-to-end testing of the new authentication and email flows.)
+-   **Which testing method agent to use?** both (The backend agent needs to test the new API endpoints like  and . The frontend agent needs to test the UI flows like clicking the Google login button and submitting the forgot password form.)
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-*   **Issue 1 (P0):** Revert the OCR engine from Tesseract back to GPT-5.2 Vision.
-*   **Issue 2 (P1):** The core problem of low OCR accuracy on blurry or low-quality images persists, even with GPT-5.2 Vision.
+-   **Issue 1 (P0):** Functionally test the newly implemented features.
+-   **Issue 2 (P1):** Add the 'Support' link to the dashboard sidebar.
 
 **Issues Detail:**
-*   **Issue 1: Revert OCR engine to GPT-5.2 Vision**
-    *   **Attempted fixes:** This is the current task. No prior attempts.
-    *   **Next debug checklist:**
-        1.  Locate the code for the Tesseract implementation in  and any helper files (e.g., ).
-        2.  Remove or comment out the Tesseract-related logic.
-        3.  Restore the previous GPT-5.2 Vision implementation, including the multi-pass and prompt engineering logic from the chat history.
-        4.  Clean up  to remove Tesseract/OpenCV dependencies and ensure  is present.
-        5.  Restart the backend server using backend: stopped
-backend: started.
-        6.  Test the  endpoint to confirm it uses the GPT-5.2 engine.
-    *   **Why fix this issue and what will be achieved with the fix?** This directly addresses the user's latest request and moves the application back to a more capable (though still imperfect) OCR engine.
-    *   **Status:** NOT STARTED
-    *   **Is recurring issue?** N
-    *   **Should Test frontend/backend/both after fix?** Backend
-    *   **Blocked on other issue:** None
+-   **Issue 1: Functionally test the newly implemented features**
+    -   **Attempted fixes:** Code has been written for all features.  was updated with Google OAuth endpoints, forgot password logic, and email sending. Frontend pages (, , ) were updated.
+    -   **Next debug checklist:**
+        1.  Add , , and SMTP credentials to the backend  file.
+        2.  **Test Google Login**: Click the Continue with Google button and complete the OAuth flow. Verify the user is created in the database and a JWT is returned.
+        3.  **Test Forgot Password**: Use the forgot password page to send a reset email. Check if the email is sent and if the link works to reset the password.
+        4.  **Test Welcome Email & Default Key**: Register a new user with email/password. Verify that a welcome email is sent and that a Default Key is present on the dashboard upon first login.
+    -   **Why fix this issue and what will be achieved with the fix?** These are critical user-facing features for authentication and onboarding. They must be fully functional for the application to be production-ready.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on other issue:** None
 
-*   **Issue 2: Poor OCR accuracy on blurry images**
-    *   **Attempted fixes:**
-        *   **With GPT-5.2:** Multiple strategies were tried, including multi-pass extraction, character-by-character analysis, and prompts designed to handle digit confusion (e.g., 5 vs. 9). None succeeded in correctly reading the user's blurry Aadhaar image. The model consistently returned incorrect numbers despite high confidence.
-        *   **With Open Source:** PaddleOCR/EasyOCR crashed the environment due to memory limits. Tesseract failed to read the text.
-    *   **Next debug checklist:**
-        1.  After reverting to GPT-5.2, re-establish the baseline (incorrect) result with the user's blurry image.
-        2.  Implement an image quality pre-check on the backend to reject low-quality images and provide feedback to the user, as previously suggested by the agent.
-        3.  Re-propose and implement the integration of a specialized OCR service like Google Cloud Vision, which the user was previously open to. This is the most viable path to production-level accuracy.
-        4.  As a complementary feature, implement the human-in-the-loop workflow for results with low confidence scores.
-    *   **Why fix this issue and what will be achieved with the fix?** This is the fundamental problem preventing the application from being commercially viable. Solving it will make the OCR service reliable and valuable to customers.
-    *   **Status:** BLOCKED
-    *   **Is recurring issue?** Y
-    *   **Should Test frontend/backend/both after fix?** Backend
-    *   **Blocked on other issue:** Issue 1
+-   **Issue 2: Add 'Support' link to dashboard sidebar**
+    -   **Attempted fixes:** None. This was part of the last user request but was missed by the agent.
+    -   **Next debug checklist:**
+        1.  Edit .
+        2.  Add a new  component that links to .
+        3.  Place it near the bottom of the navigation links.
+    -   **Why fix this issue and what will be achieved with the fix?** Provides users with a clear way to contact support from within the application.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
-There are no other tasks in progress; the entire focus is on fixing the core OCR functionality.
+None.
 
 **Upcoming and Future Tasks**
-*   **Upcoming Tasks:**
-    *   (P0) Implement an image quality pre-check in  to reject blurry images before sending them for OCR processing.
-    *   (P1) Re-evaluate and integrate a production-grade OCR service (e.g., Google Cloud Vision, Azure Document Intelligence) to achieve high accuracy.
-*   **Future Tasks:**
-    *   Implement a human-in-the-loop workflow, allowing low-confidence extractions to be flagged for manual review via the dashboard.
-    *   If the self-hosted path is revisited, provision a GPU-enabled environment is necessary to run heavy models like PaddleOCR.
+-   **Upcoming Tasks:**
+    -   **(P0) Activate Razorpay Billing**: Replace the placeholder billing logic with a full Razorpay integration to handle subscriptions and payments.
+    -   **(P1) Enforce Usage Limits**: Connect the implemented plan limits to the OCR endpoint to block requests that exceed the quota.
+-   **Future Tasks:**
+    -   Publish Python/Node.js SDKs to PyPI and npm.
+    -   Implement WhatsApp integration for notifications or support.
+    -   Add webhook management UI in the dashboard.
 
 **Completed work in this session**
-*   **Full-Stack OCR SaaS Platform:**
-    *   Backend (FastAPI) with user authentication (JWT), API key management, and OCR endpoints.
-    *   Frontend (React) with a landing page, user auth forms, and a dashboard containing an API playground and analytics.
-*   **OCR Engine Experimentation:**
-    *   Initial implementation and complex prompt engineering with GPT-5.2 Vision.
-    *   Failed attempts to integrate PaddleOCR, EasyOCR, and Tesseract.
+-   **OCR Engine Overhaul**: Migrated from Tesseract to Gemini 3 Flash, resolving core accuracy issues.
+-   **SaaS Pricing & UX Strategy**: Developed a disruptive pricing model for the Indian market and implemented it on a professional, multi-tier pricing page.
+-   **Landing Page Redesign**: Created a conversion-focused landing page with an interactive Solutions by Industry section.
+-   **Expanded Document Support**: Increased OCR capabilities from just IDs to over 15 document types (invoices, cheques, etc.).
+-   **Backend Infrastructure**: Built out modules and endpoints for billing (stubs), usage limits, batch processing, and webhooks.
+-   **Developer Tooling**: Created basic SDKs and a public API documentation page.
+-   **Complete UX/Content Audit**: Implemented over 20 UX and content improvements across the entire application, enhancing professionalism and user flow.
+-   **Onboarding & Auth**: Added a 3-step onboarding flow, Google Social Login, Forgot Password, and a 404 page.
 
 **Earlier issues found/mentioned but not fixed**
-*   The fundamental issue of poor OCR accuracy on low-quality images has been the central, unresolved problem throughout the session. The agent has proposed viable solutions (image quality checks, specialized OCR services) but has not yet implemented them.
+None. The primary issue of OCR accuracy was resolved by switching to Gemini 3 Flash.
 
 **Known issue recurrence from previous fork**
-*   N/A
+N/A
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-*   **Backend:** FastAPI, MongoDB (motor)
-*   **Frontend:** React, TailwindCSS, Shadcn/UI
-*   **Authentication:** JWT for web app, API Keys ( header) for the external API.
-*   **OCR Engine:** Currently being reverted from Tesseract to **GPT-5.2 Vision**.
+-   **Backend**: FastAPI, MongoDB (motor), Pydantic
+-   **Frontend**: React, TailwindCSS, Shadcn/UI, Lucide-React
+-   **OCR Engine**: Gemini 3 Flash Vision
+-   **Authentication**: JWT, Google OAuth 2.0
+-   **Payments**: Razorpay (stubbed)
+-   **Email**: SMTP for transactional emails
 
 **key DB schema**
-*   **users:** 
-*   **api_keys:** 
-*   **ocr_requests:** 
+-   **users**: 
+-   **api_keys**: 
+-   **password_reset_tokens**: 
 
 **changes in tech stack**
-The OCR engine has been a moving target. The stack is currently reverting from  back to  after  and  failed due to memory constraints.
+-   OCR engine switched from Tesseract to **Gemini 3 Flash**.
+-   Added  and  to backend .
+-   Introduced Google OAuth for authentication.
 
 **All files of reference**
-*   : Contains the primary application logic, including all API endpoints and the heavily modified OCR processing pipeline.
-*   : Created for open-source OCR models; it's now a candidate for removal or significant refactoring.
-*   : Has been modified multiple times with dependencies for different OCR engines; needs cleanup.
-*   : A script created for manual testing of the OCR function with local images.
+-   : Core application logic, including all new auth and feature endpoints.
+-   : The main, redesigned marketing page.
+-   : The main user view after login, shows onboarding and usage.
+-   , : Updated with Google Login button.
+-   : New page for the reset flow.
+-   , : New modules for future functionality.
+-   : Directory containing the new developer SDKs.
 
 **Areas that need refactoring**:
-The OCR logic within  is convoluted due to multiple abandoned approaches. After reverting to GPT-5.2, the file should be cleaned up to remove all Tesseract-related code, commented-out blocks, and legacy functions to improve clarity and maintainability.
+-   The  file has become very large. The auth routes, OCR routes, billing routes, and other utility endpoints could be broken out into separate router files under a  directory to improve modularity.
 
 **key api endpoints**
-*   
-*   
-*   
-*    (The core OCR endpoint)
+-   , 
+-   , 
+-   , 
+-    (Single OCR)
+-    (Batch OCR)
+-   ,  (Billing)
+-   ,  (Webhooks)
 
 **Critical Info for New Agent**
-*   **The Core Problem:** The user is frustrated because the OCR is inaccurate on a blurry image they provided. This is the single most important issue to solve.
-*   **Failed Experiments:** Do not attempt to use memory-intensive open-source OCR models like PaddleOCR or EasyOCR, as the environment lacks the resources (GPU/RAM) and will crash. Tesseract has already been tried and deemed insufficient by the user.
-*   **Immediate Task:** Your first job is to revert the OCR engine back to GPT-5.2 Vision as requested by the user. Find the Tesseract code in  and replace it with the previous GPT-5.2 logic from the conversation history.
-*   **Next Step Strategy:** Reverting to GPT-5.2 will not solve the accuracy problem. Be prepared to immediately address this by proposing the previously discussed solutions: **1) Implement an image quality pre-check** to reject bad images, and **2) Integrate a specialized OCR service like Google Cloud Vision**, which is the most promising path to success.
+-   **Priority 1 is Testing**: Your immediate task is to functionally test the recently added auth features (Google Login, Forgot Password, Welcome Email). They are coded but unverified. This requires setting up environment variables for Google and SMTP.
+-   **Maintain Persona**: The user has adopted a founder mindset, focusing on business strategy, UX, and conversion. Your communication and suggestions should align with this—think about what drives business value.
+-   **Next Major Task**: After testing is complete, the next logical step is to fully implement the Razorpay billing integration to turn this into a revenue-generating product.
 
 **documents and test reports created in this job**
-*   
-*   
-*   
+-    (extensively updated)
+-   , , 
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-A summary of the user's journey through OCR engine choices:
-1.  **User:** help me with something? How much charge i will incur for 1000 OCRs so i understand what to charge from client?"
-2.  **User:** "Cant we make our own OCR? and sell it at extrem low prices and disrupt the entire OCR market forever?
-3.  **User:** Yes, lets go partner (Agrees to build with PaddleOCR).
-4.  *(Agent attempts PaddleOCR, EasyOCR, then Tesseract, all with poor results on the user's image).*
-5.  **User:** then lets start with Tesseract and and then migrate to self hosted GPU when we hit 100k+ extractions/month. But make sure, it extracts adhar, pan, dl, passport, other gvernment ids or everything else the right way. Like make it best universal document extractor ever.
-6.  *(Agent builds a universal extractor with Tesseract, which still fails on the blurry image).*
-7.  **User:** I tested, the outputs were bad, retract back to chatgpt or is there any free ai agent? **(This is the latest and most critical instruction).**
+1.  **User**: Requested a complete UX and content audit, acting as a founder/head of UX.
+2.  **User**: Critiqued the agent's updated content as a little cheap and asked for a more professional tone. Also pointed out the API Docs link was broken.
+3.  **User**: Agreed with agent's suggestions to skip logos but implement an onboarding flow. Asked to add a Schedule a Demo Calendly button.
+4.  **User**: Requested a large batch of final features: Google Social Login, default API key, forgot password flow, welcome email, support contact info, and a 404 page. (This was the last set of instructions implemented).
 
 **Project Health Check:**
-*   **Broken:** The core feature of the application—accurate OCR—is not working reliably, especially on real-world, imperfect images. The user has rejected the current implementation (Tesseract).
+-   **Healthy**: The core OCR functionality is working well, and the application has matured into a feature-rich SaaS platform.
+-   **Mocked**: Razorpay billing is currently mocked with placeholder endpoints.
 
 **3rd Party Integrations**
-*   **OpenAI GPT-5.2 Vision:** Uses Emergent LLM Key. This is the target integration for the current task.
-*   **Tesseract, PaddleOCR, EasyOCR:** Attempted integrations. Their dependencies should be removed from .
+-   **Gemini 3 Flash** — uses Emergent LLM Key
+-   **Google OAuth 2.0** — requires User API Key (, )
+-   **Razorpay (Payments)** — requires User API Key (stubbed, not yet fully integrated)
+-   **SMTP (Transactional Email)** — requires User API Key (, , etc.)
 
 **Testing status**
-*   **Testing agent used after significant changes:** NO (not since the initial feature build).
-*   **Troubleshoot agent used after agent stuck in loop:** NO
-*   **Test files created:** []
-*   **Known regressions:** The switch to Tesseract was a major regression in capability compared to GPT-5.2, which the user immediately noticed.
+-   **Testing agent used after significant changes:** YES (used for the billing/batch/webhook features, all 34 tests passed).
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None
+-   **Known regressions:** None
 
 **Credentials to test flow:**
-New users can be created through the registration page on the frontend. No pre-seeded credentials are required.
+To test the newly added features, the following environment variables must be set in :
+-   
+-   
+-   
+-   
+-   
+-   
 
 **What agent forgot to execute**
-The agent repeatedly identified that the root cause was the user's blurry image and proposed robust solutions like **image quality checks** and **integrating a specialized OCR service** (like Google Cloud Vision). However, it got sidetracked by the user's request to build a disruptive open-source solution, which proved unfeasible. The agent failed to implement the practical solutions it had already identified.</analysis>
+-   The agent did not functionally test the last batch of critical features it implemented (Google Login, Forgot Password, Welcome Email). It only performed visual verification with screenshots.
+-   The agent forgot to add the Support link () to the dashboard sidebar, which was part of the user's final request.</analysis>
