@@ -254,13 +254,15 @@ const LandingPage = () => {
                   Start Building — It's Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/docs">
-                <Button size="lg" variant="outline" data-testid="hero-docs-btn" className="text-lg px-8 h-14">
-                  Read the Docs
+              <a href="https://calendly.com/extractai/demo" target="_blank" rel="noopener noreferrer">
+                <Button size="lg" variant="outline" data-testid="hero-demo-btn" className="text-lg px-8 h-14">
+                  Schedule a Demo
                 </Button>
-              </Link>
+              </a>
             </div>
-            <p className="text-sm text-muted-foreground mt-4">100 free extractions • No credit card required</p>
+            <p className="text-sm text-muted-foreground mt-4">
+              100 free extractions • No credit card required • <Link to="/docs" className="text-primary hover:underline">Read the docs</Link>
+            </p>
           </motion.div>
 
           {/* Code Preview */}

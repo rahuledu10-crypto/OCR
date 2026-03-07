@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
+import OnboardingFlow from '../components/OnboardingFlow';
 import { 
   FileText, 
   Key, 
@@ -28,6 +29,7 @@ const DashboardOverview = () => {
   const [recentExtractions, setRecentExtractions] = useState([]);
   const [apiKeys, setApiKeys] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +44,12 @@ const DashboardOverview = () => {
         setRecentExtractions(recentRes.data);
         setApiKeys(keysRes.data);
         setSubscription(subRes.data);
+
+        // Show onboarding if user has no API keys and hasn't completed onboarding
+        const onboardingCompleted = localStorage.getItem('onboarding_completed');
+        if (!onboardingCompleted && keysRes.data.length === 0) {
+          setShowOnboarding(true);
+        }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -92,8 +100,27 @@ const DashboardOverview = () => {
     );
   }
 
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    // Refresh data
+    window.location.reload();
+  };
+
+  const handleOnboardingSkip = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('onboarding_completed', 'true');
+  };
+
   return (
     <div data-testid="dashboard-overview" className="space-y-6">
+      {/* Onboarding Flow */}
+      {showOnboarding && (
+        <OnboardingFlow 
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
