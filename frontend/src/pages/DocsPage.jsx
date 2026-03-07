@@ -285,17 +285,22 @@ console.log(response.data);`,
               <CardTitle className="font-heading text-lg">Supported Documents</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground mb-3">15+ document types supported</p>
               <div className="p-3 bg-muted/30 rounded-lg">
-                <p className="font-medium text-sm">Aadhaar Card</p>
-                <p className="text-xs text-muted-foreground">UID, Name, DOB, Gender, Address</p>
+                <p className="font-medium text-sm">ID Documents</p>
+                <p className="text-xs text-muted-foreground">Aadhaar, PAN, DL, Passport, Voter ID</p>
               </div>
               <div className="p-3 bg-muted/30 rounded-lg">
-                <p className="font-medium text-sm">PAN Card</p>
-                <p className="text-xs text-muted-foreground">PAN, Name, Father's Name, DOB</p>
+                <p className="font-medium text-sm">Business Documents</p>
+                <p className="text-xs text-muted-foreground">Invoice, PO, Challan, E-way Bill</p>
               </div>
               <div className="p-3 bg-muted/30 rounded-lg">
-                <p className="font-medium text-sm">Driving License</p>
-                <p className="text-xs text-muted-foreground">DL Number, Name, Validity, Class</p>
+                <p className="font-medium text-sm">Financial Documents</p>
+                <p className="text-xs text-muted-foreground">Cheque, Bank Statement, Salary Slip</p>
+              </div>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="font-medium text-sm">Medical & Legal</p>
+                <p className="text-xs text-muted-foreground">Prescription, Lab Report, Rent Agreement</p>
               </div>
             </CardContent>
           </Card>
@@ -307,15 +312,23 @@ console.log(response.data);`,
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <p className="text-muted-foreground">
-                Rate limits are set per API key and can be configured in the dashboard.
+                Rate limits vary by plan:
               </p>
               <div className="flex justify-between py-2 border-b border-border/50">
-                <span className="text-muted-foreground">Default limit</span>
+                <span className="text-muted-foreground">Free</span>
+                <span className="font-mono">10 req/min</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <span className="text-muted-foreground">Starter</span>
+                <span className="font-mono">30 req/min</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <span className="text-muted-foreground">Growth</span>
                 <span className="font-mono">100 req/min</span>
               </div>
               <div className="flex justify-between py-2">
-                <span className="text-muted-foreground">Max limit</span>
-                <span className="font-mono">1000 req/min</span>
+                <span className="text-muted-foreground">Enterprise</span>
+                <span className="font-mono">500 req/min</span>
               </div>
             </CardContent>
           </Card>
@@ -329,6 +342,10 @@ console.log(response.data);`,
               <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="font-mono text-destructive">401</span>
                 <span className="text-muted-foreground">Invalid API key</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <span className="font-mono text-yellow-500">402</span>
+                <span className="text-muted-foreground">Usage limit exceeded</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="font-mono text-destructive">429</span>

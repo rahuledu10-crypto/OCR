@@ -213,21 +213,24 @@ const LandingPage = () => {
             className="text-center max-w-4xl mx-auto"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-sm text-muted-foreground">Now with 99.8% extraction accuracy</span>
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-sm text-muted-foreground">Trusted by 500+ businesses across India</span>
             </div>
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-              Extract ID Data with
-              <span className="gradient-text block">AI-Powered OCR</span>
+              Document OCR API
+              <span className="gradient-text block">10x Cheaper Than Competition</span>
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Instantly extract data from IDs, invoices, cheques, prescriptions & more. 
-              One API, all document types, enterprise-grade accuracy at ₹0.20/extraction.
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
+              Extract data from Aadhaar, PAN, invoices, cheques & 15+ document types. 
+              One API call, instant results, enterprise-grade accuracy.
+            </p>
+            <p className="text-2xl font-bold text-primary mb-8">
+              Just ₹0.20/extraction • 100 FREE to start
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/register">
                 <Button size="lg" data-testid="hero-cta-btn" className="bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.4)] text-lg px-8">
-                  Start Free Trial <ArrowRight className="ml-2 w-5 h-5" />
+                  Get 100 Free Extractions <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/dashboard/docs">
@@ -493,14 +496,28 @@ const LandingPage = () => {
           >
             <Card className="p-12 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
               <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4">
-                Ready to automate ID extraction?
+                Start Extracting in 2 Minutes
               </h2>
-              <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-                Join hundreds of companies using ExtractAI to streamline their KYC workflows.
+              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+                No credit card required. Get 100 free extractions instantly.
               </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>100 free extractions</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>No credit card needed</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>Setup in 2 minutes</span>
+                </div>
+              </div>
               <Link to="/register">
                 <Button size="lg" data-testid="cta-signup-btn" className="bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.4)]">
-                  Start Your Free Trial <ArrowRight className="ml-2 w-5 h-5" />
+                  Create Free Account <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
             </Card>
@@ -511,12 +528,17 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="py-12 px-4 border-t border-border/50">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <span className="font-heading font-bold">ExtractAI</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <a href="mailto:support@extractai.in" className="hover:text-foreground transition-colors">support@extractai.in</a>
+              <a href="#docs" className="hover:text-foreground transition-colors">API Docs</a>
+              <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
             </div>
             <p className="text-sm text-muted-foreground">
               &copy; 2026 ExtractAI. All rights reserved.

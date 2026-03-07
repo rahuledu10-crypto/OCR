@@ -7,7 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from 'sonner';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Check } from 'lucide-react';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -23,7 +23,7 @@ const RegisterPage = () => {
 
     try {
       await register(email, password, companyName);
-      toast.success('Account created successfully!');
+      toast.success('Account created! You have 100 free extractions.');
       navigate('/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Registration failed');
@@ -53,8 +53,8 @@ const RegisterPage = () => {
 
         <Card className="bg-card/50 backdrop-blur border-border/50">
           <CardHeader className="text-center">
-            <CardTitle className="font-heading text-2xl">Create your account</CardTitle>
-            <CardDescription>Start extracting ID data in minutes</CardDescription>
+            <CardTitle className="font-heading text-2xl">Get 100 Free Extractions</CardTitle>
+            <CardDescription>No credit card required • Setup in 2 minutes</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,7 +71,7 @@ const RegisterPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Work Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -88,7 +88,7 @@ const RegisterPage = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Create a strong password"
+                  placeholder="Min 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -109,10 +109,33 @@ const RegisterPage = () => {
                     Creating account...
                   </>
                 ) : (
-                  'Create account'
+                  'Start Free Trial'
                 )}
               </Button>
             </form>
+            
+            {/* Trust signals */}
+            <div className="mt-6 pt-6 border-t border-border/50">
+              <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Check className="w-3 h-3 text-green-500" />
+                  <span>100 free extractions</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-3 h-3 text-green-500" />
+                  <span>No credit card</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-3 h-3 text-green-500" />
+                  <span>15+ document types</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-3 h-3 text-green-500" />
+                  <span>Instant API access</span>
+                </div>
+              </div>
+            </div>
+            
             <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{' '}
               <Link to="/login" className="text-primary hover:underline" data-testid="register-login-link">

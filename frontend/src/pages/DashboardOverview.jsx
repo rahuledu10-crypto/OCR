@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Progress } from '../components/ui/progress';
 import { 
   FileText, 
   Key, 
@@ -12,7 +13,10 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
-  Clock
+  Clock,
+  Zap,
+  CreditCard,
+  AlertCircle
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -20,6 +24,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const DashboardOverview = () => {
   const { getAuthHeaders } = useAuth();
   const [stats, setStats] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   const [recentExtractions, setRecentExtractions] = useState([]);
   const [apiKeys, setApiKeys] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,14 +32,16 @@ const DashboardOverview = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, recentRes, keysRes] = await Promise.all([
+        const [statsRes, recentRes, keysRes, subRes] = await Promise.all([
           axios.get(`${API}/analytics/usage`, { headers: getAuthHeaders() }),
           axios.get(`${API}/analytics/recent?limit=5`, { headers: getAuthHeaders() }),
-          axios.get(`${API}/keys`, { headers: getAuthHeaders() })
+          axios.get(`${API}/keys`, { headers: getAuthHeaders() }),
+          axios.get(`${API}/subscription`, { headers: getAuthHeaders() })
         ]);
         setStats(statsRes.data);
         setRecentExtractions(recentRes.data);
         setApiKeys(keysRes.data);
+        setSubscription(subRes.data);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -134,6 +141,81 @@ const DashboardOverview = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* Usage & Plan Card */}
+      {subscription && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardContent className="pt-6">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                {/* Plan Info */}
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading font-semibold text-lg">{subscription.plan_details?.name || 'Free'} Plan</span>
+                      {subscription.plan === 'free' && (
+                        <span className="px-2 py-0.5 text-xs bg-yellow-500/20 text-yellow-500 rounded-full">Limited</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {subscription.plan_details?.price_inr ? `₹${subscription.plan_details.price_inr}/month` : 'Free tier'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Usage Progress */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Extractions Used</span>
+                    <span className="font-medium">
+                      {subscription.usage?.extractions_used || 0} / {subscription.usage?.extractions_limit || 100}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={subscription.usage?.extractions_limit ? 
+                      ((subscription.usage?.extractions_used || 0) / subscription.usage.extractions_limit) * 100 : 0
+                    } 
+                    className="h-2"
+                  />
+                  {subscription.usage?.remaining !== null && subscription.usage?.remaining <= 20 && (
+                    <p className="text-xs text-yellow-500 mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Only {subscription.usage.remaining} extractions remaining
+                    </p>
+                  )}
+                </div>
+
+                {/* Wallet Balance */}
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Wallet Balance</p>
+                    <p className="text-xl font-bold">₹{(subscription.wallet_balance || 0).toFixed(2)}</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="shrink-0">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Add Funds
+                  </Button>
+                </div>
+
+                {/* Upgrade Button */}
+                {subscription.plan === 'free' && (
+                  <Button className="bg-primary hover:bg-primary/90 shrink-0">
+                    Upgrade Plan
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Document Breakdown & Recent Activity */}
       <div className="grid lg:grid-cols-2 gap-6">
