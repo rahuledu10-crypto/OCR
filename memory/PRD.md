@@ -28,14 +28,17 @@ Build a universal OCR SaaS platform where users upload document images and extra
 - **Mobile responsive** - Hamburger menu on small screens
 - Interactive "Built For Every Industry" section
 - User auth (email/password)
+- **Terms of Service** page (/terms) - 13 legal sections, IT Act compliant
+- **Privacy Policy** page (/privacy) - 14 sections, DPDPA 2023 compliant
 - **Plan Upgrade Modal** - 4 plans with Subscribe buttons (MOCKED)
+- **Auto-open upgrade on 429** - Rate limit triggers modal
 - **Usage Meter** - Progress bar showing "X / Y extractions used"
 - **Credits Badge** - Remaining extractions in top navbar
 - **Support Page** - Contact form with FAQ section
+- **Empty States** - Analytics, Recent extractions, API Keys for new users
 - Dashboard, API keys, playground, analytics, docs
 - **Forgot Password** page
 - **404 Not Found** page
-- Mobile responsive
 
 ### SDKs
 - **Python SDK** (`/app/sdk/python/`)
