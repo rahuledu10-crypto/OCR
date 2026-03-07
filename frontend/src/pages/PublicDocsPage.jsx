@@ -22,7 +22,7 @@ const PublicDocsPage = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const curlExample = `curl -X POST "https://api.extractai.in/api/v1/extract" \\
+  const curlExample = `curl -X POST "https://api.extractai.io/api/v1/extract" \\
   -H "X-API-Key: your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{

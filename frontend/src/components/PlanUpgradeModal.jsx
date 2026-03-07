@@ -109,7 +109,7 @@ const PlanUpgradeModal = ({ isOpen, onClose, currentPlan = 'free' }) => {
 
     if (planId === 'enterprise') {
       // Open email for enterprise
-      window.location.href = 'mailto:sales@extractai.in?subject=Enterprise%20Plan%20Inquiry';
+      window.location.href = 'mailto:sales@extractai.io?subject=Enterprise%20Plan%20Inquiry';
       return;
     }
 

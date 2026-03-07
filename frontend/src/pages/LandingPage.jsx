@@ -595,7 +595,7 @@ const LandingPage = () => {
                   Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <a href="mailto:sales@extractai.in">
+              <a href="mailto:sales@extractai.io">
                 <Button size="lg" variant="outline" className="text-lg px-10 h-14">
                   Talk to Sales
                 </Button>
@@ -636,8 +636,8 @@ const LandingPage = () => {
             <div>
               <h4 className="font-heading font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="mailto:support@extractai.in" className="hover:text-foreground transition-colors">Support</a></li>
-                <li><a href="mailto:sales@extractai.in" className="hover:text-foreground transition-colors">Sales</a></li>
+                <li><a href="mailto:support@extractai.io" className="hover:text-foreground transition-colors">Support</a></li>
+                <li><a href="mailto:sales@extractai.io" className="hover:text-foreground transition-colors">Sales</a></li>
                 <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
               </ul>

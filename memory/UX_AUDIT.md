@@ -46,7 +46,7 @@
 ### 6. Footer
 **Before:** Minimal footer with just copyright
 **After:**
-- Added support email: support@extractai.in
+- Added support email: support@extractai.io
 - Added quick links: API Docs, Pricing
 - Better layout
 

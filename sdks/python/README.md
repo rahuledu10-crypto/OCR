@@ -103,9 +103,9 @@ except UsageLimitError:
 - **Growth**: ₹1,999/month - 5,000 extractions  
 - **Enterprise**: Custom pricing
 
-Get your API key at [extractai.in](https://extractai.in)
+Get your API key at [extractai.io](https://extractai.io)
 
 ## Support
 
-- Documentation: [docs.extractai.in](https://docs.extractai.in)
-- Email: support@extractai.in
+- Documentation: [docs.extractai.io](https://docs.extractai.io)
+- Email: support@extractai.io

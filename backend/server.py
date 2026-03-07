@@ -282,20 +282,20 @@ async def send_welcome_email(email: str, name: str, api_key: str):
             
             <p>Quick start:</p>
             <pre style="background: #1f2937; color: #e5e7eb; padding: 15px; border-radius: 8px; overflow-x: auto;">
-curl -X POST "https://api.extractai.in/api/v1/extract" \\
+curl -X POST "https://api.extractai.io/api/v1/extract" \\
   -H "X-API-Key: {api_key}" \\
   -H "Content-Type: application/json" \\
   -d '{{"image_base64": "...", "document_type": "auto"}}'
             </pre>
             
             <p style="margin-top: 30px;">
-                <a href="https://extractai.in/dashboard" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                <a href="https://extractai.io/dashboard" style="background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
                     Go to Dashboard
                 </a>
             </p>
             
             <p style="color: #6b7280; font-size: 14px; margin-top: 40px;">
-                Questions? Reply to this email or contact us at support@extractai.in
+                Questions? Reply to this email or contact us at support@extractai.io
             </p>
         </body>
         </html>
@@ -696,7 +696,7 @@ async def send_reset_email(email: str, token: str):
         msg['To'] = email
         
         # TODO: Update this URL to your actual frontend URL
-        reset_url = f"https://extractai.in/reset-password?token={token}"
+        reset_url = f"https://extractai.io/reset-password?token={token}"
         
         html = f"""
         <html>

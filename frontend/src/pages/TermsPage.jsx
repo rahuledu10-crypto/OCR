@@ -94,7 +94,7 @@ const TermsPage = () => {
               <h2 className="text-2xl font-semibold mb-4">6. Refund Policy</h2>
               <div className="text-muted-foreground leading-relaxed space-y-3">
                 <p><strong className="text-foreground">6.1 Subscription Refunds:</strong> Subscription fees are non-refundable once the billing cycle has begun. You may cancel your subscription at any time, but no prorated refunds will be provided.</p>
-                <p><strong className="text-foreground">6.2 Wallet Balance:</strong> Unused wallet balance can be refunded within 30 days of the last top-up, minus any extractions used. Refund requests must be submitted via email to billing@extractai.in.</p>
+                <p><strong className="text-foreground">6.2 Wallet Balance:</strong> Unused wallet balance can be refunded within 30 days of the last top-up, minus any extractions used. Refund requests must be submitted via email to billing@extractai.io.</p>
                 <p><strong className="text-foreground">6.3 Service Issues:</strong> If you experience service outages or technical issues that prevent usage, contact support for credit consideration on a case-by-case basis.</p>
               </div>
             </section>
@@ -160,8 +160,8 @@ const TermsPage = () => {
                 <p>For questions about these Terms, contact us at:</p>
                 <p className="mt-2">
                   <strong className="text-foreground">ExtractAI Technologies Private Limited</strong><br />
-                  Email: legal@extractai.in<br />
-                  Support: support@extractai.in
+                  Email: legal@extractai.io<br />
+                  Support: support@extractai.io
                 </p>
               </div>
             </section>

@@ -73,7 +73,7 @@ class ExtractAI:
     
     Args:
         api_key: Your ExtractAI API key
-        base_url: API base URL (default: https://api.extractai.in)
+        base_url: API base URL (default: https://api.extractai.io)
         timeout: Request timeout in seconds
     
     Example:
@@ -91,7 +91,7 @@ class ExtractAI:
         result = client.extract_base64(base64_string, document_type="invoice")
     """
     
-    DEFAULT_BASE_URL = "https://api.extractai.in"
+    DEFAULT_BASE_URL = "https://api.extractai.io"
     
     def __init__(
         self, 

@@ -51,7 +51,7 @@ const PrivacyPage = () => {
                 <p className="mt-2">
                   <strong className="text-foreground">Grievance Officer:</strong><br />
                   Name: Data Protection Officer<br />
-                  Email: privacy@extractai.in<br />
+                  Email: privacy@extractai.io<br />
                   Address: Bengaluru, Karnataka, India
                 </p>
               </div>
@@ -163,7 +163,7 @@ const PrivacyPage = () => {
                   <li><strong className="text-foreground">Grievance Redressal:</strong> Lodge complaints with our Grievance Officer or the Data Protection Board of India</li>
                   <li><strong className="text-foreground">Nominate:</strong> Nominate another person to exercise your rights in case of death or incapacity</li>
                 </ul>
-                <p className="mt-3">To exercise these rights, email privacy@extractai.in with your request. We will respond within 30 days.</p>
+                <p className="mt-3">To exercise these rights, email privacy@extractai.io with your request. We will respond within 30 days.</p>
               </div>
             </section>
 
@@ -196,7 +196,7 @@ const PrivacyPage = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-4">11. Children's Privacy</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Our Services are not directed at individuals under 18 years of age. We do not knowingly collect personal data from children. If you believe a child has provided us with personal data, contact us immediately at privacy@extractai.in.
+                Our Services are not directed at individuals under 18 years of age. We do not knowingly collect personal data from children. If you believe a child has provided us with personal data, contact us immediately at privacy@extractai.io.
               </p>
             </section>
 
@@ -221,8 +221,8 @@ const PrivacyPage = () => {
                 <p className="mt-2">
                   <strong className="text-foreground">Data Protection Officer</strong><br />
                   ExtractAI Technologies Private Limited<br />
-                  Email: privacy@extractai.in<br />
-                  General Support: support@extractai.in
+                  Email: privacy@extractai.io<br />
+                  General Support: support@extractai.io
                 </p>
               </div>
             </section>

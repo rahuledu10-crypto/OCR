@@ -285,7 +285,7 @@ const OnboardingFlow = ({ onComplete, onSkip }) => {
                 <div className="bg-muted/30 rounded-xl p-4 mb-6 text-left">
                   <p className="text-sm font-medium mb-2">Quick start code:</p>
                   <pre className="text-xs bg-background rounded-lg p-3 overflow-x-auto">
-{`curl -X POST "https://api.extractai.in/api/v1/extract" \\
+{`curl -X POST "https://api.extractai.io/api/v1/extract" \\
   -H "X-API-Key: ${apiKey || 'your_api_key'}" \\
   -H "Content-Type: application/json" \\
   -d '{"image_base64": "...", "document_type": "auto"}'`}

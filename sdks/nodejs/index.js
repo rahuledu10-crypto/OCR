@@ -76,7 +76,7 @@ class ExtractAI {
    * Create ExtractAI client
    * @param {string} apiKey - Your ExtractAI API key
    * @param {Object} options - Configuration options
-   * @param {string} options.baseUrl - API base URL (default: https://api.extractai.in)
+   * @param {string} options.baseUrl - API base URL (default: https://api.extractai.io)
    * @param {number} options.timeout - Request timeout in ms (default: 60000)
    */
   constructor(apiKey, options = {}) {
@@ -85,7 +85,7 @@ class ExtractAI {
     }
     
     this.apiKey = apiKey;
-    this.baseUrl = (options.baseUrl || 'https://api.extractai.in').replace(/\/$/, '');
+    this.baseUrl = (options.baseUrl || 'https://api.extractai.io').replace(/\/$/, '');
     this.timeout = options.timeout || 60000;
   }
 

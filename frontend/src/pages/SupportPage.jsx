@@ -192,7 +192,7 @@ const SupportPage = () => {
                   <div>
                     <p className="font-medium text-sm">Email Support</p>
                     <p className="text-muted-foreground text-sm mt-1">
-                      support@extractai.in
+                      support@extractai.io
                     </p>
                   </div>
                 </div>
