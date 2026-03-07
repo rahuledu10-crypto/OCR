@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -20,6 +20,9 @@ import asyncio
 
 # Import our custom OCR engine (Gemini 3 Flash Vision)
 from ocr_engine import extract_document as ocr_extract_document, ExtractionResult
+from plans import PLANS, PAYG_PRICE_PER_EXTRACTION
+from payments import create_order, verify_payment_signature, PLAN_PRICES, IS_TEST_MODE
+from webhooks import send_webhook, create_extraction_webhook_payload, create_batch_webhook_payload
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -106,6 +109,68 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+# ========== NEW MODELS FOR BILLING, BATCH, WEBHOOKS ==========
+
+class UserResponseWithPlan(UserResponse):
+    plan: str = "free"
+    extractions_used: int = 0
+    extractions_limit: Optional[int] = 100
+    plan_expires_at: Optional[str] = None
+    wallet_balance: float = 0.0
+
+class SubscriptionCreate(BaseModel):
+    plan: str  # starter, growth, enterprise
+
+class PaymentOrderResponse(BaseModel):
+    order_id: str
+    amount: int
+    currency: str = "INR"
+    plan: str
+    razorpay_key_id: str
+    is_test_mode: bool = False
+
+class PaymentVerify(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+    plan: str
+
+class WalletTopUp(BaseModel):
+    amount: int  # Amount in INR
+
+class BatchOCRRequest(BaseModel):
+    images: List[Dict[str, str]]  # List of {"image_base64": "...", "document_type": "..."}
+    webhook_url: Optional[str] = None
+    webhook_secret: Optional[str] = None
+
+class BatchOCRResponse(BaseModel):
+    batch_id: str
+    total: int
+    successful: int
+    failed: int
+    results: List[Dict[str, Any]]
+    processing_time_ms: int
+
+class WebhookConfig(BaseModel):
+    url: str
+    secret: Optional[str] = None
+    events: List[str] = ["extraction.completed", "batch.completed"]
+    is_active: bool = True
+
+class WebhookConfigResponse(BaseModel):
+    id: str
+    url: str
+    events: List[str]
+    is_active: bool
+    created_at: str
+
+class PlanInfoResponse(BaseModel):
+    name: str
+    price_inr: Optional[int]
+    extractions_per_month: Optional[int]
+    rate_limit_per_minute: int
+    features: List[str]
+
 # ========== HELPER FUNCTIONS ==========
 
 def hash_password(password: str) -> str:
@@ -140,6 +205,97 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def generate_api_key() -> str:
     return f"ocr_{secrets.token_urlsafe(32)}"
 
+async def get_user_usage(user_id: str) -> Dict[str, Any]:
+    """Get current month's usage for a user"""
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Count extractions this month
+    extractions_count = await db.ocr_requests.count_documents({
+        "user_id": user_id,
+        "timestamp": {"$gte": month_start.isoformat()},
+        "success": True
+    })
+    
+    return {
+        "extractions_used": extractions_count,
+        "month_start": month_start.isoformat()
+    }
+
+async def check_usage_limit(user_id: str) -> Dict[str, Any]:
+    """Check if user can make more extractions"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    plan_name = user.get("plan", "free")
+    plan = PLANS.get(plan_name, PLANS["free"])
+    
+    usage = await get_user_usage(user_id)
+    extractions_used = usage["extractions_used"]
+    
+    # For free plan, it's a one-time limit (not monthly)
+    if plan_name == "free":
+        total_extractions = await db.ocr_requests.count_documents({
+            "user_id": user_id,
+            "success": True
+        })
+        extractions_used = total_extractions
+    
+    extractions_limit = plan.get("extractions_per_month")
+    wallet_balance = user.get("wallet_balance", 0.0)
+    
+    # Enterprise has unlimited
+    if extractions_limit is None:
+        return {"allowed": True, "reason": "unlimited", "extractions_used": extractions_used}
+    
+    # Check if under plan limit
+    if extractions_used < extractions_limit:
+        return {
+            "allowed": True,
+            "reason": "within_plan",
+            "extractions_used": extractions_used,
+            "extractions_limit": extractions_limit,
+            "remaining": extractions_limit - extractions_used
+        }
+    
+    # Check if wallet has balance for pay-as-you-go
+    if wallet_balance >= PAYG_PRICE_PER_EXTRACTION:
+        return {
+            "allowed": True,
+            "reason": "payg",
+            "extractions_used": extractions_used,
+            "extractions_limit": extractions_limit,
+            "wallet_balance": wallet_balance,
+            "will_charge": PAYG_PRICE_PER_EXTRACTION
+        }
+    
+    # Limit exceeded and no wallet balance
+    return {
+        "allowed": False,
+        "reason": "limit_exceeded",
+        "extractions_used": extractions_used,
+        "extractions_limit": extractions_limit,
+        "message": f"Monthly limit of {extractions_limit} extractions reached. Add wallet balance or upgrade plan."
+    }
+
+async def deduct_usage(user_id: str, usage_check: Dict[str, Any]) -> None:
+    """Deduct from wallet if using pay-as-you-go"""
+    if usage_check.get("reason") == "payg":
+        charge = usage_check.get("will_charge", PAYG_PRICE_PER_EXTRACTION)
+        await db.users.update_one(
+            {"id": user_id},
+            {"$inc": {"wallet_balance": -charge}}
+        )
+        # Log the charge
+        await db.wallet_transactions.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "amount": -charge,
+            "type": "extraction_charge",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+
 async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="X-API-Key header is required")
@@ -147,6 +303,14 @@ async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-
     api_key = await db.api_keys.find_one({"key": x_api_key, "is_active": True}, {"_id": 0})
     if not api_key:
         raise HTTPException(status_code=401, detail="Invalid or inactive API key")
+    
+    # Check usage limits
+    usage_check = await check_usage_limit(api_key["user_id"])
+    if not usage_check["allowed"]:
+        raise HTTPException(
+            status_code=402,  # Payment Required
+            detail=usage_check.get("message", "Usage limit exceeded")
+        )
     
     # Rate limiting check
     now = datetime.now(timezone.utc)
@@ -156,7 +320,13 @@ async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-
         "timestamp": {"$gte": minute_ago.isoformat()}
     })
     
-    if recent_requests >= api_key["rate_limit"]:
+    # Get rate limit from user's plan
+    user = await db.users.find_one({"id": api_key["user_id"]}, {"_id": 0})
+    plan_name = user.get("plan", "free") if user else "free"
+    plan = PLANS.get(plan_name, PLANS["free"])
+    rate_limit = plan.get("rate_limit_per_minute", 10)
+    
+    if recent_requests >= rate_limit:
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
     
     # Update last used
@@ -164,6 +334,9 @@ async def validate_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-
         {"id": api_key["id"]},
         {"$set": {"last_used": now.isoformat()}, "$inc": {"total_requests": 1}}
     )
+    
+    # Store usage check for potential PAYG deduction
+    api_key["_usage_check"] = usage_check
     
     return api_key
 
@@ -467,6 +640,418 @@ async def get_recent_extractions(user: dict = Depends(get_current_user), limit: 
         {"_id": 0}
     ).sort("timestamp", -1).limit(limit).to_list(limit)
     return extractions
+
+# ========== BILLING & SUBSCRIPTION ENDPOINTS ==========
+
+@api_router.get("/plans")
+async def get_plans():
+    """Get all available plans"""
+    return [
+        {
+            "id": plan_id,
+            "name": plan["name"],
+            "price_inr": plan["price_inr"],
+            "extractions_per_month": plan["extractions_per_month"],
+            "rate_limit_per_minute": plan["rate_limit_per_minute"],
+            "features": plan["features"]
+        }
+        for plan_id, plan in PLANS.items()
+    ]
+
+@api_router.get("/subscription")
+async def get_subscription(user: dict = Depends(get_current_user)):
+    """Get current user's subscription details"""
+    plan_name = user.get("plan", "free")
+    plan = PLANS.get(plan_name, PLANS["free"])
+    
+    usage = await get_user_usage(user["id"])
+    
+    # For free plan, check total usage instead of monthly
+    if plan_name == "free":
+        total_extractions = await db.ocr_requests.count_documents({
+            "user_id": user["id"],
+            "success": True
+        })
+        extractions_used = total_extractions
+    else:
+        extractions_used = usage["extractions_used"]
+    
+    return {
+        "plan": plan_name,
+        "plan_details": {
+            "name": plan["name"],
+            "price_inr": plan["price_inr"],
+            "extractions_per_month": plan["extractions_per_month"],
+            "features": plan["features"]
+        },
+        "usage": {
+            "extractions_used": extractions_used,
+            "extractions_limit": plan["extractions_per_month"],
+            "remaining": (plan["extractions_per_month"] - extractions_used) if plan["extractions_per_month"] else None
+        },
+        "wallet_balance": user.get("wallet_balance", 0.0),
+        "plan_expires_at": user.get("plan_expires_at")
+    }
+
+@api_router.post("/subscription/create-order")
+async def create_subscription_order(data: SubscriptionCreate, user: dict = Depends(get_current_user)):
+    """Create Razorpay order for subscription"""
+    plan_name = data.plan.lower()
+    
+    if plan_name not in PLAN_PRICES:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    
+    price = PLAN_PRICES[plan_name]
+    if price is None:
+        raise HTTPException(status_code=400, detail="Contact sales for enterprise pricing")
+    
+    order = create_order(
+        amount_inr=price,
+        user_id=user["id"],
+        plan=plan_name
+    )
+    
+    # Store order in database
+    await db.payment_orders.insert_one({
+        "order_id": order["id"],
+        "user_id": user["id"],
+        "plan": plan_name,
+        "amount": price,
+        "status": "created",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return PaymentOrderResponse(
+        order_id=order["id"],
+        amount=price * 100,  # Paise
+        currency="INR",
+        plan=plan_name,
+        razorpay_key_id=os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_placeholder'),
+        is_test_mode=IS_TEST_MODE
+    )
+
+@api_router.post("/subscription/verify-payment")
+async def verify_subscription_payment(data: PaymentVerify, user: dict = Depends(get_current_user)):
+    """Verify Razorpay payment and activate subscription"""
+    
+    # Verify signature
+    is_valid = verify_payment_signature(
+        data.razorpay_order_id,
+        data.razorpay_payment_id,
+        data.razorpay_signature
+    )
+    
+    if not is_valid:
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    
+    plan_name = data.plan.lower()
+    if plan_name not in PLANS:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(days=30)
+    
+    # Update user's plan
+    await db.users.update_one(
+        {"id": user["id"]},
+        {
+            "$set": {
+                "plan": plan_name,
+                "plan_expires_at": expires_at.isoformat(),
+                "plan_started_at": now.isoformat()
+            }
+        }
+    )
+    
+    # Update payment order status
+    await db.payment_orders.update_one(
+        {"order_id": data.razorpay_order_id},
+        {
+            "$set": {
+                "status": "paid",
+                "payment_id": data.razorpay_payment_id,
+                "paid_at": now.isoformat()
+            }
+        }
+    )
+    
+    # Log the transaction
+    await db.payment_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "order_id": data.razorpay_order_id,
+        "payment_id": data.razorpay_payment_id,
+        "plan": plan_name,
+        "amount": PLAN_PRICES[plan_name],
+        "type": "subscription",
+        "timestamp": now.isoformat()
+    })
+    
+    return {
+        "success": True,
+        "message": f"Successfully upgraded to {PLANS[plan_name]['name']} plan",
+        "plan": plan_name,
+        "expires_at": expires_at.isoformat()
+    }
+
+@api_router.post("/wallet/topup")
+async def create_wallet_topup(data: WalletTopUp, user: dict = Depends(get_current_user)):
+    """Create order to top up wallet balance"""
+    if data.amount < 100:
+        raise HTTPException(status_code=400, detail="Minimum top-up amount is ₹100")
+    
+    order = create_order(
+        amount_inr=data.amount,
+        user_id=user["id"],
+        plan="wallet_topup"
+    )
+    
+    await db.payment_orders.insert_one({
+        "order_id": order["id"],
+        "user_id": user["id"],
+        "type": "wallet_topup",
+        "amount": data.amount,
+        "status": "created",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return PaymentOrderResponse(
+        order_id=order["id"],
+        amount=data.amount * 100,
+        currency="INR",
+        plan="wallet_topup",
+        razorpay_key_id=os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_placeholder'),
+        is_test_mode=IS_TEST_MODE
+    )
+
+@api_router.post("/wallet/verify-topup")
+async def verify_wallet_topup(data: PaymentVerify, user: dict = Depends(get_current_user)):
+    """Verify wallet top-up payment"""
+    
+    is_valid = verify_payment_signature(
+        data.razorpay_order_id,
+        data.razorpay_payment_id,
+        data.razorpay_signature
+    )
+    
+    if not is_valid:
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    
+    # Get order details
+    order = await db.payment_orders.find_one({"order_id": data.razorpay_order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    amount = order["amount"]
+    now = datetime.now(timezone.utc)
+    
+    # Add to wallet balance
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$inc": {"wallet_balance": amount}}
+    )
+    
+    # Update order status
+    await db.payment_orders.update_one(
+        {"order_id": data.razorpay_order_id},
+        {
+            "$set": {
+                "status": "paid",
+                "payment_id": data.razorpay_payment_id,
+                "paid_at": now.isoformat()
+            }
+        }
+    )
+    
+    # Log transaction
+    await db.wallet_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "amount": amount,
+        "type": "topup",
+        "payment_id": data.razorpay_payment_id,
+        "timestamp": now.isoformat()
+    })
+    
+    # Get updated balance
+    updated_user = await db.users.find_one({"id": user["id"]}, {"_id": 0})
+    
+    return {
+        "success": True,
+        "message": f"₹{amount} added to wallet",
+        "new_balance": updated_user.get("wallet_balance", amount)
+    }
+
+# ========== BATCH PROCESSING ENDPOINTS ==========
+
+@api_router.post("/v1/batch-extract", response_model=BatchOCRResponse)
+async def batch_extract(
+    request: BatchOCRRequest, 
+    background_tasks: BackgroundTasks,
+    api_key: dict = Depends(validate_api_key)
+):
+    """
+    Batch extract data from multiple documents
+    Max 10 documents per request
+    """
+    import time
+    start_time = time.time()
+    
+    if len(request.images) > 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 images per batch request")
+    
+    if len(request.images) == 0:
+        raise HTTPException(status_code=400, detail="At least one image is required")
+    
+    batch_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    results = []
+    successful = 0
+    failed = 0
+    
+    for idx, image_data in enumerate(request.images):
+        try:
+            image_base64 = image_data.get("image_base64", "")
+            document_type = image_data.get("document_type")
+            
+            result = await extract_document_info(image_base64, document_type)
+            
+            results.append({
+                "index": idx,
+                "success": True,
+                "document_type": result.get("document_type", "unknown"),
+                "extracted_data": result.get("extracted_data", {}),
+                "confidence": result.get("confidence", 0)
+            })
+            successful += 1
+            
+        except Exception as e:
+            results.append({
+                "index": idx,
+                "success": False,
+                "error": str(e)
+            })
+            failed += 1
+    
+    processing_time = int((time.time() - start_time) * 1000)
+    
+    # Store batch request
+    batch_doc = {
+        "batch_id": batch_id,
+        "user_id": api_key["user_id"],
+        "api_key_id": api_key["id"],
+        "total": len(request.images),
+        "successful": successful,
+        "failed": failed,
+        "results": results,
+        "processing_time_ms": processing_time,
+        "timestamp": now.isoformat()
+    }
+    await db.batch_requests.insert_one(batch_doc)
+    
+    # Send webhook if configured
+    if request.webhook_url:
+        webhook_payload = create_batch_webhook_payload(
+            batch_id=batch_id,
+            total=len(request.images),
+            successful=successful,
+            failed=failed,
+            results=results,
+            user_id=api_key["user_id"]
+        )
+        background_tasks.add_task(
+            send_webhook,
+            request.webhook_url,
+            webhook_payload,
+            request.webhook_secret
+        )
+    
+    return BatchOCRResponse(
+        batch_id=batch_id,
+        total=len(request.images),
+        successful=successful,
+        failed=failed,
+        results=results,
+        processing_time_ms=processing_time
+    )
+
+# ========== WEBHOOK CONFIGURATION ENDPOINTS ==========
+
+@api_router.post("/webhooks", response_model=WebhookConfigResponse)
+async def create_webhook(config: WebhookConfig, user: dict = Depends(get_current_user)):
+    """Configure a webhook endpoint"""
+    webhook_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    webhook_doc = {
+        "id": webhook_id,
+        "user_id": user["id"],
+        "url": config.url,
+        "secret": config.secret,
+        "events": config.events,
+        "is_active": config.is_active,
+        "created_at": now
+    }
+    
+    await db.webhooks.insert_one(webhook_doc)
+    
+    return WebhookConfigResponse(
+        id=webhook_id,
+        url=config.url,
+        events=config.events,
+        is_active=config.is_active,
+        created_at=now
+    )
+
+@api_router.get("/webhooks")
+async def list_webhooks(user: dict = Depends(get_current_user)):
+    """List all webhook configurations"""
+    webhooks = await db.webhooks.find(
+        {"user_id": user["id"]},
+        {"_id": 0, "secret": 0}
+    ).to_list(100)
+    return webhooks
+
+@api_router.delete("/webhooks/{webhook_id}")
+async def delete_webhook(webhook_id: str, user: dict = Depends(get_current_user)):
+    """Delete a webhook configuration"""
+    result = await db.webhooks.delete_one({
+        "id": webhook_id,
+        "user_id": user["id"]
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    return {"message": "Webhook deleted"}
+
+@api_router.post("/webhooks/{webhook_id}/test")
+async def test_webhook(webhook_id: str, user: dict = Depends(get_current_user)):
+    """Send a test webhook"""
+    webhook = await db.webhooks.find_one({
+        "id": webhook_id,
+        "user_id": user["id"]
+    }, {"_id": 0})
+    
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    
+    test_payload = {
+        "event": "test",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "data": {
+            "message": "This is a test webhook from ExtractAI"
+        }
+    }
+    
+    result = await send_webhook(
+        webhook["url"],
+        test_payload,
+        webhook.get("secret")
+    )
+    
+    return {
+        "success": result["success"],
+        "details": result
+    }
 
 # ========== HEALTH CHECK ==========
 

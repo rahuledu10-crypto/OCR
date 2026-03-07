@@ -1,0 +1,116 @@
+{
+  "summary": "Backend testing completed for new billing, batch processing, and webhook features. All 34 tests passed (100%). Tested: Plans API, Subscription management, Razorpay order creation & verification (test mode), Wallet top-up, Batch extraction (max 10 docs), Webhook CRUD & testing. SDKs reviewed - well structured with proper error handling.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "note": "JWT secret key warning (30 bytes, below 32 recommended) - low priority security improvement"
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": {
+    "plans_api": [
+      "GET /api/plans - returns all 4 plans (free, starter, growth, enterprise)",
+      "Plans have correct structure (id, name, price_inr, extractions_per_month, features)",
+      "Free plan: ₹0, 100 extractions",
+      "Starter plan: ₹499, 1000 extractions",
+      "Growth plan: ₹1999, 5000 extractions",
+      "Enterprise plan: custom pricing, unlimited extractions"
+    ],
+    "subscription_api": [
+      "GET /api/subscription - returns user's current plan and usage",
+      "Subscription shows proper usage structure (extractions_used, limit, remaining)",
+      "Subscription endpoint requires authentication",
+      "POST /api/subscription/create-order - creates Razorpay order for starter plan",
+      "POST /api/subscription/create-order - creates Razorpay order for growth plan",
+      "Create order rejects invalid plan with 400",
+      "Enterprise plan returns 'contact sales' message",
+      "POST /api/subscription/verify-payment - accepts test signature and activates plan"
+    ],
+    "wallet_api": [
+      "POST /api/wallet/topup - creates order for wallet top-up",
+      "Wallet top-up enforces ₹100 minimum amount",
+      "Wallet top-up requires authentication"
+    ],
+    "batch_extraction_api": [
+      "POST /api/v1/batch-extract - processes multiple documents (2 tested)",
+      "Batch extraction enforces max 10 documents limit",
+      "Batch extraction requires at least 1 image",
+      "Batch extraction requires API key authentication",
+      "Batch extraction accepts webhook_url parameter"
+    ],
+    "webhooks_api": [
+      "POST /api/webhooks - creates webhook configuration",
+      "Create webhook with secret for HMAC signing",
+      "GET /api/webhooks - lists all webhooks (excludes secret)",
+      "DELETE /api/webhooks/{id} - deletes webhook",
+      "Delete nonexistent webhook returns 404",
+      "POST /api/webhooks/{id}/test - sends test webhook",
+      "Test nonexistent webhook returns 404",
+      "Webhook endpoints require authentication"
+    ],
+    "usage_limits": [
+      "Free plan has 100 extraction limit verified",
+      "Subscription shows remaining extractions correctly"
+    ],
+    "integration_flows": [
+      "Full subscription upgrade flow: register -> check subscription -> create order -> verify payment -> check upgraded plan",
+      "Batch processing flow: register -> create API key -> batch extract 3 documents"
+    ]
+  },
+
+  "test_report_links": [
+    "/app/backend/tests/test_billing_batch_webhooks.py",
+    "/app/test_reports/pytest/pytest_results_iteration4.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "Razorpay integration properly handles test mode - accepts any signature when IS_TEST_MODE=true",
+    "Webhook system properly excludes secret from list responses for security",
+    "Batch extraction correctly limits to 10 documents per request",
+    "Plans API correctly returns all 4 pricing tiers with proper structure",
+    "SDKs (Python & Node.js) are well-structured with proper error handling for 401, 402, 429 errors"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_billing_batch_webhooks.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (34/34 tests passed)",
+    "frontend": "Not tested (backend only requested)"
+  },
+
+  "test_credentials": {
+    "note": "Test users created with pattern TEST_billing_user_*, TEST_flow_user_*, TEST_batch_user_* during testing"
+  },
+
+  "seed_data_creation": "Test users, API keys, webhooks, and payment orders created with TEST_* prefix during pytest execution",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Backend billing features fully tested. Razorpay is in TEST MODE - no real payments processed. All new endpoints working: /api/plans, /api/subscription, /api/subscription/create-order, /api/subscription/verify-payment, /api/wallet/topup, /api/v1/batch-extract, /api/webhooks CRUD + test. SDKs at /app/sdks/python and /app/sdks/nodejs are properly structured.",
+
+  "razorpay_integration": {
+    "status": "WORKING (TEST MODE)",
+    "key_id_pattern": "rzp_test_placeholder",
+    "test_mode_behavior": "Accepts any signature, returns mock order IDs (order_test_*)"
+  },
+
+  "sdk_review": {
+    "python_sdk": "Well-structured with ExtractAI client class, ExtractionResult/BatchResult dataclasses, proper error classes (AuthenticationError, RateLimitError, UsageLimitError)",
+    "nodejs_sdk": "Well-structured with ExtractAI class, proper error handling, camelCase property mapping, batch support"
+  }
+}

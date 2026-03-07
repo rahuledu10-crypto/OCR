@@ -1,0 +1,34 @@
+{
+  "name": "extractai",
+  "version": "1.0.0",
+  "description": "ExtractAI - Simple, powerful OCR for Indian documents",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ocr",
+    "aadhaar",
+    "pan",
+    "document",
+    "extraction",
+    "kyc",
+    "india",
+    "invoice",
+    "cheque"
+  ],
+  "author": "ExtractAI <support@extractai.in>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/extractai/extractai-node"
+  },
+  "homepage": "https://extractai.in",
+  "bugs": {
+    "url": "https://github.com/extractai/extractai-node/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
