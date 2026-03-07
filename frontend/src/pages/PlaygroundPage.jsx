@@ -138,7 +138,7 @@ const PlaygroundPage = () => {
         <Card className="bg-card/50 backdrop-blur border-border/50">
           <CardHeader>
             <CardTitle className="font-heading text-lg">Upload Document</CardTitle>
-            <CardDescription>Upload an image of an Aadhaar, PAN, or Driving License</CardDescription>
+            <CardDescription>Upload any document - ID cards, invoices, cheques, prescriptions & more</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* File Upload Area */}
@@ -204,9 +204,27 @@ const PlaygroundPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="auto">Auto Detect</SelectItem>
+                  <SelectItem disabled className="font-semibold text-muted-foreground">— ID Documents —</SelectItem>
                   <SelectItem value="aadhaar">Aadhaar Card</SelectItem>
                   <SelectItem value="pan">PAN Card</SelectItem>
                   <SelectItem value="dl">Driving License</SelectItem>
+                  <SelectItem value="passport">Passport</SelectItem>
+                  <SelectItem value="voter_id">Voter ID</SelectItem>
+                  <SelectItem disabled className="font-semibold text-muted-foreground">— Business Documents —</SelectItem>
+                  <SelectItem value="invoice">Invoice</SelectItem>
+                  <SelectItem value="purchase_order">Purchase Order</SelectItem>
+                  <SelectItem value="delivery_challan">Delivery Challan</SelectItem>
+                  <SelectItem value="eway_bill">E-way Bill</SelectItem>
+                  <SelectItem disabled className="font-semibold text-muted-foreground">— Financial Documents —</SelectItem>
+                  <SelectItem value="cheque">Bank Cheque</SelectItem>
+                  <SelectItem value="bank_statement">Bank Statement</SelectItem>
+                  <SelectItem value="salary_slip">Salary Slip</SelectItem>
+                  <SelectItem disabled className="font-semibold text-muted-foreground">— Property & Legal —</SelectItem>
+                  <SelectItem value="rent_agreement">Rent Agreement</SelectItem>
+                  <SelectItem value="property_doc">Property Document</SelectItem>
+                  <SelectItem disabled className="font-semibold text-muted-foreground">— Medical Documents —</SelectItem>
+                  <SelectItem value="prescription">Prescription</SelectItem>
+                  <SelectItem value="lab_report">Lab Report</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -49,7 +49,10 @@ const LandingPage = () => {
   const documentTypes = [
     { icon: <IdCard className="w-8 h-8" />, name: "Aadhaar Card", fields: "12-digit UID, Name, DOB, Address" },
     { icon: <CreditCard className="w-8 h-8" />, name: "PAN Card", fields: "PAN Number, Name, Father's Name, DOB" },
-    { icon: <Car className="w-8 h-8" />, name: "Driving License", fields: "DL Number, Name, Validity, Vehicle Class" }
+    { icon: <Car className="w-8 h-8" />, name: "Driving License", fields: "DL Number, Name, Validity, Vehicle Class" },
+    { icon: <FileText className="w-8 h-8" />, name: "Invoices & Bills", fields: "Invoice No, Items, GST, Total Amount" },
+    { icon: <CreditCard className="w-8 h-8" />, name: "Bank Cheques", fields: "Cheque No, Payee, Amount, Bank Details" },
+    { icon: <FileText className="w-8 h-8" />, name: "Medical Records", fields: "Prescriptions, Lab Reports, Patient Info" }
   ];
 
   const pricingPlans = [
@@ -135,8 +138,8 @@ const LandingPage = () => {
               <span className="gradient-text block">AI-Powered OCR</span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Instantly extract Aadhaar, PAN, and Driving License data from images. 
-              One API, all Indian ID documents, enterprise-grade accuracy.
+              Instantly extract data from IDs, invoices, cheques, prescriptions & more. 
+              One API, all document types, enterprise-grade accuracy at ₹0.20/extraction.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/register">
@@ -241,11 +244,11 @@ const LandingPage = () => {
               Supported Documents
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Extract structured data from all major Indian identity documents
+              Extract structured data from IDs, business documents, financial records & medical files
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
             {documentTypes.map((doc, index) => (
               <motion.div
                 key={doc.name}
@@ -254,12 +257,12 @@ const LandingPage = () => {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="p-6 bg-card/50 backdrop-blur border-border/50 hover:border-accent/30 transition-all duration-300 group">
-                  <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-4 group-hover:scale-110 transition-transform">
+                <Card className="p-4 bg-card/50 backdrop-blur border-border/50 hover:border-accent/30 transition-all duration-300 group h-full">
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-3 group-hover:scale-110 transition-transform">
                     {doc.icon}
                   </div>
-                  <h3 className="font-heading text-xl font-semibold mb-2">{doc.name}</h3>
-                  <p className="text-sm text-muted-foreground">{doc.fields}</p>
+                  <h3 className="font-heading text-base font-semibold mb-1">{doc.name}</h3>
+                  <p className="text-xs text-muted-foreground">{doc.fields}</p>
                 </Card>
               </motion.div>
             ))}

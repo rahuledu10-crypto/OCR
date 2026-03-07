@@ -21,11 +21,28 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentType(Enum):
+    # Indian ID Documents
     AADHAAR = "aadhaar"
     PAN = "pan"
     DRIVING_LICENSE = "dl"
     PASSPORT = "passport"
     VOTER_ID = "voter_id"
+    # Business Documents
+    INVOICE = "invoice"
+    PURCHASE_ORDER = "purchase_order"
+    DELIVERY_CHALLAN = "delivery_challan"
+    EWAY_BILL = "eway_bill"
+    # Financial Documents
+    CHEQUE = "cheque"
+    BANK_STATEMENT = "bank_statement"
+    SALARY_SLIP = "salary_slip"
+    # Property & Legal
+    RENT_AGREEMENT = "rent_agreement"
+    PROPERTY_DOC = "property_doc"
+    # Medical Documents
+    PRESCRIPTION = "prescription"
+    LAB_REPORT = "lab_report"
+    # General
     UNKNOWN = "unknown"
 
 
@@ -92,15 +109,16 @@ async def extract_document(image_base64: str, document_type: Optional[str] = Non
         raise ValueError("EMERGENT_LLM_KEY not configured")
     
     # Build the system prompt for document extraction
-    system_prompt = """You are an expert OCR system for extracting information from identity documents.
+    system_prompt = """You are an expert OCR system for extracting information from documents.
 
 IMPORTANT INSTRUCTIONS:
 1. Read EVERY character carefully, especially numbers
 2. For ID numbers, verify digit count before outputting
 3. Common digit confusions to avoid: 5↔9, 3↔8, 0↔6, 1↔7
 4. If any field is unclear, still attempt to read it but note lower confidence
+5. Extract ALL visible fields intelligently
 
-DOCUMENT TYPES AND FIELDS TO EXTRACT:
+=== INDIAN IDENTITY DOCUMENTS ===
 
 AADHAAR CARD (12-digit number starting with 2-9):
 - aadhaar_number: Format as "XXXX XXXX XXXX" (12 digits total)
@@ -141,9 +159,120 @@ VOTER ID (EPIC):
 - date_of_birth: DD/MM/YYYY or Age
 - gender: Male/Female
 
+=== BUSINESS DOCUMENTS ===
+
+INVOICE:
+- invoice_number: Invoice/bill number
+- date: Invoice date
+- seller_name: Seller/vendor company name
+- buyer_name: Buyer/customer name
+- gstin: GST number if visible
+- line_items: List of items with description, quantity, rate, amount
+- total_amount: Grand total
+- tax_amount: GST/tax amount
+- bank_details: Bank name, account number, IFSC if visible
+
+PURCHASE ORDER:
+- po_number: Purchase order number
+- date: PO date
+- vendor: Vendor/supplier name
+- items: List of items with description and quantity
+- total_value: Total PO value
+
+DELIVERY CHALLAN:
+- challan_number: Challan/DC number
+- date: Challan date
+- items: List of items
+- quantity: Quantities of each item
+- receiver: Receiver name/company
+
+E-WAY BILL:
+- eway_bill_number: E-way bill number
+- validity: Valid from/to dates
+- from_to: From and To addresses
+- vehicle_number: Vehicle registration number
+- hsn_code: HSN codes if visible
+- value: Total value of goods
+
+=== FINANCIAL DOCUMENTS ===
+
+BANK CHEQUE:
+- cheque_number: Cheque number
+- date: Date on cheque
+- payee_name: Pay to / beneficiary name
+- amount_words: Amount in words
+- amount_figures: Amount in numbers
+- bank_name: Bank name
+- account_number: Account number if visible
+- ifsc_code: IFSC code if visible
+
+BANK STATEMENT:
+- account_holder: Account holder name
+- account_number: Account number
+- bank_name: Bank name
+- statement_period: From and To dates
+- transactions: List of transactions with date, description, debit, credit, balance
+
+SALARY SLIP:
+- employee_name: Employee name
+- employee_id: Employee ID/code
+- month: Pay period/month
+- basic_salary: Basic salary amount
+- allowances: HRA, DA, other allowances
+- deductions: PF, TDS, other deductions
+- net_salary: Net pay amount
+- company_name: Employer name
+
+=== PROPERTY & LEGAL DOCUMENTS ===
+
+RENT AGREEMENT:
+- landlord: Landlord/owner name
+- tenant: Tenant name
+- property_address: Full property address
+- rent_amount: Monthly rent
+- security_deposit: Security deposit amount
+- duration: Agreement duration/period
+- start_date: Agreement start date
+
+PROPERTY DOCUMENT:
+- survey_number: Survey/plot number
+- owner_name: Property owner name
+- area: Property area (sq ft/sq m/acres)
+- location: Property location/address
+- document_type: Sale deed/title deed/etc.
+
+=== MEDICAL DOCUMENTS ===
+
+PRESCRIPTION:
+- doctor_name: Doctor's name
+- doctor_registration: Registration number
+- clinic_hospital: Clinic/hospital name
+- patient_name: Patient name
+- date: Prescription date
+- diagnosis: Diagnosis if mentioned
+- medicines: List of medicines with name, dosage, frequency, duration
+
+LAB REPORT:
+- lab_name: Laboratory name
+- patient_name: Patient name
+- patient_age: Patient age
+- date: Report date
+- test_name: Name of test(s)
+- results: Test results with values
+- reference_range: Normal reference ranges
+- interpretation: Doctor's interpretation if any
+
+=== GENERAL DOCUMENTS ===
+
+For any other document type not listed above:
+- Extract ALL visible text fields intelligently
+- Use best-guess field names based on content
+- Include any numbers, dates, names, addresses found
+- Note the general nature of the document
+
 OUTPUT FORMAT (JSON only):
 {
-  "document_type": "aadhaar|pan|dl|passport|voter_id|unknown",
+  "document_type": "aadhaar|pan|dl|passport|voter_id|invoice|purchase_order|delivery_challan|eway_bill|cheque|bank_statement|salary_slip|rent_agreement|property_doc|prescription|lab_report|unknown",
   "extracted_data": {
     // All extracted fields here
   },
@@ -162,13 +291,15 @@ ALWAYS return valid JSON. Extract as much information as possible."""
         
         # Build prompt based on document type hint
         if document_type and document_type != "auto":
-            prompt = f"""This is a {document_type.upper()} document. 
+            doc_type_display = document_type.upper().replace("_", " ")
+            prompt = f"""This is a {doc_type_display} document. 
 Extract ALL information visible on the document.
-Pay special attention to the ID number - read each digit carefully.
+Pay special attention to numbers, dates, and names - read each character carefully.
 Return ONLY valid JSON with the extracted data."""
         else:
             prompt = """Identify this document type and extract ALL visible information.
-Pay special attention to ID numbers - read each digit carefully.
+This could be an ID document, business document, financial document, medical document, or any other type.
+Pay special attention to numbers, dates, and names - read each character carefully.
 Return ONLY valid JSON with the extracted data."""
         
         image_content = ImageContent(image_base64=image_base64)
