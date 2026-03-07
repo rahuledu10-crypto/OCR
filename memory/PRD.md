@@ -8,36 +8,51 @@ Build a universal OCR system where users upload document images and extract key 
 2. **Product Manager** - Monitors usage, manages API keys, reviews analytics
 3. **Compliance Officer** - Needs audit trails and usage reports
 
-## Supported Document Types (17 Total)
+## Target Industries & Use Cases
+
+### Logistics & Transport
+- RC Certificate, Driving License, Aadhaar Card, POD, E-way Bill, Freight Invoice
+- Use case: Trucker KYC, POD processing, freight document digitisation
+
+### Banking & Finance
+- PAN Card, Aadhaar Card, Bank Cheque, Bank Statement, Salary Slip, ITR
+- Use case: KYC, loan processing, financial document verification
+
+### HR & Staffing
+- Aadhaar, PAN, DL, Salary Slip, Offer Letter, Educational Certificate
+- Use case: Employee onboarding, background verification
+
+### Healthcare
+- Prescription, Lab Report, Aadhaar, Health Insurance Card, Discharge Summary
+- Use case: Patient records, insurance claim processing
+
+### Legal & Property
+- Rent Agreement, Sale Deed, Aadhaar, PAN, Property Tax Receipt, NOC
+- Use case: Legal agreement extraction, property documents
+
+### E-Commerce & Retail
+- GST Invoice, Purchase Order, Delivery Challan, E-way Bill, Credit/Debit Note
+- Use case: Invoice processing, supply chain documents
+
+## Supported Document Types (17+ Total)
 
 ### Indian ID Documents
-- Aadhaar Card (12-digit UID, Name, DOB, Address)
-- PAN Card (PAN Number, Name, Father's Name, DOB)
-- Driving License (DL Number, Validity, Vehicle Class)
-- Passport (Passport Number, Name, Dates)
-- Voter ID (EPIC Number, Name, Details)
+- Aadhaar Card, PAN Card, Driving License, Passport, Voter ID
 
 ### Business Documents
-- Invoice (Invoice No, Items, GST, Total Amount)
-- Purchase Order (PO Number, Vendor, Items)
-- Delivery Challan (Challan No, Items, Receiver)
-- E-way Bill (Bill Number, From/To, Vehicle)
+- Invoice, Purchase Order, Delivery Challan, E-way Bill, RC Certificate
 
 ### Financial Documents
-- Bank Cheque (Cheque No, Payee, Amount, Bank Details)
-- Bank Statement (Account Details, Transactions)
-- Salary Slip (Employee Info, Salary Breakdown)
+- Bank Cheque, Bank Statement, Salary Slip, Income Tax Return
 
 ### Property & Legal
-- Rent Agreement (Landlord, Tenant, Rent, Duration)
-- Property Document (Survey No, Owner, Area)
+- Rent Agreement, Sale Deed, Property Documents, NOC
 
 ### Medical Documents
-- Prescription (Doctor, Patient, Medicines)
-- Lab Report (Tests, Results, Reference Ranges)
+- Prescription, Lab Report, Discharge Summary, Health Insurance Card
 
 ### General
-- Any other document (Intelligent field extraction)
+- Any document with intelligent field extraction
 
 ## What's Been Implemented (Feb 21, 2026)
 
@@ -49,22 +64,25 @@ Build a universal OCR system where users upload document images and extract key 
 - ✅ Rate limiting per API key
 - ✅ Usage analytics endpoints
 - ✅ MongoDB persistence for all data
-- ✅ Universal document extraction (17 document types)
+- ✅ Universal document extraction (17+ document types)
 
 ### Frontend (React + Tailwind + Shadcn)
-- ✅ Landing page with hero, features, pricing (INR), CTAs
+- ✅ Landing page with interactive industry-based solutions section
+- ✅ "Built For Every Industry" section with 6 industries
+- ✅ Pricing in INR (Free, ₹499, ₹1,999, Custom)
 - ✅ User registration and login flows
 - ✅ Dashboard with usage overview
 - ✅ API Keys management page
-- ✅ API Playground with all 17 document types in dropdown
+- ✅ API Playground with all document types in dropdown
 - ✅ Analytics page with charts
 - ✅ API Documentation page
+- ✅ Mobile responsive design
 
 ### Integrations
 - ✅ **Gemini 3 Flash Vision** via Emergent LLM Key (~₹0.14/extraction cost)
 - ✅ MongoDB for data persistence
 
-### Pricing (Updated Feb 21, 2026)
+### Pricing
 | Tier | Price | Extractions |
 |------|-------|-------------|
 | Free | ₹0/month | 100 (one-time) |
@@ -102,8 +120,8 @@ Build a universal OCR system where users upload document images and extract key 
 
 ## Key Files
 - `/app/backend/server.py` - Main FastAPI app
-- `/app/backend/ocr_engine.py` - Gemini 3 Flash Vision with 17 document types
-- `/app/frontend/src/pages/LandingPage.jsx` - Landing page with pricing
+- `/app/backend/ocr_engine.py` - Gemini 3 Flash Vision with 17+ document types
+- `/app/frontend/src/pages/LandingPage.jsx` - Landing page with industry solutions
 - `/app/frontend/src/pages/PlaygroundPage.jsx` - OCR playground with document dropdown
 
 ## API Endpoints

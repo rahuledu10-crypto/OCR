@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { 
@@ -13,11 +13,23 @@ import {
   CreditCard,
   IdCard,
   Car,
-  Copy
+  Copy,
+  Truck,
+  Landmark,
+  Users,
+  Heart,
+  Scale,
+  ShoppingBag,
+  Receipt,
+  FileCheck,
+  Stethoscope,
+  Home,
+  Package
 } from 'lucide-react';
 
 const LandingPage = () => {
   const [copiedCode, setCopiedCode] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState('logistics');
 
   const copyCode = () => {
     navigator.clipboard.writeText(`curl -X POST "https://api.ocrextract.io/api/v1/extract" \\
@@ -26,6 +38,86 @@ const LandingPage = () => {
   -d '{"image_base64": "...", "document_type": "auto"}'`);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const industries = {
+    logistics: {
+      name: "Logistics & Transport",
+      icon: Truck,
+      description: "Automate trucker KYC, POD processing and freight document digitisation",
+      documents: [
+        { name: "RC Certificate", fields: ["Reg. Number", "Owner Name", "Valid Upto", "Insurance"], icon: Car },
+        { name: "Driving License", fields: ["DL Number", "Name", "Validity", "Vehicle Class"], icon: IdCard },
+        { name: "Aadhaar Card", fields: ["UID", "Name", "DOB", "Address"], icon: IdCard },
+        { name: "Proof of Delivery", fields: ["POD Number", "Date", "Receiver", "Signature"], icon: FileCheck },
+        { name: "E-way Bill", fields: ["Bill Number", "From/To", "Vehicle No", "Value"], icon: Receipt },
+        { name: "Freight Invoice", fields: ["Invoice No", "Amount", "GST", "Route"], icon: FileText }
+      ]
+    },
+    banking: {
+      name: "Banking & Finance",
+      icon: Landmark,
+      description: "Accelerate KYC, loan processing and financial document verification",
+      documents: [
+        { name: "PAN Card", fields: ["PAN Number", "Name", "DOB", "Father's Name"], icon: CreditCard },
+        { name: "Aadhaar Card", fields: ["UID", "Name", "DOB", "Address"], icon: IdCard },
+        { name: "Bank Cheque", fields: ["Cheque No", "Payee", "Amount", "IFSC"], icon: CreditCard },
+        { name: "Bank Statement", fields: ["Account No", "Balance", "Transactions"], icon: FileText },
+        { name: "Salary Slip", fields: ["Employee ID", "Basic", "Deductions", "Net Pay"], icon: Receipt },
+        { name: "Income Tax Return", fields: ["PAN", "AY", "Total Income", "Tax Paid"], icon: FileText }
+      ]
+    },
+    hr: {
+      name: "HR & Staffing",
+      icon: Users,
+      description: "Speed up employee onboarding and background verification",
+      documents: [
+        { name: "Aadhaar Card", fields: ["UID", "Name", "DOB", "Address"], icon: IdCard },
+        { name: "PAN Card", fields: ["PAN Number", "Name", "DOB"], icon: CreditCard },
+        { name: "Driving License", fields: ["DL Number", "Name", "Validity"], icon: Car },
+        { name: "Salary Slip", fields: ["Employee ID", "Month", "Net Salary"], icon: Receipt },
+        { name: "Offer Letter", fields: ["Company", "Role", "CTC", "Join Date"], icon: FileText },
+        { name: "Educational Certificate", fields: ["Degree", "University", "Year", "Grade"], icon: FileCheck }
+      ]
+    },
+    healthcare: {
+      name: "Healthcare",
+      icon: Heart,
+      description: "Digitise patient records and insurance claim documents instantly",
+      documents: [
+        { name: "Prescription", fields: ["Doctor", "Patient", "Medicines", "Dosage"], icon: Stethoscope },
+        { name: "Lab Report", fields: ["Test Name", "Result", "Reference", "Date"], icon: FileText },
+        { name: "Aadhaar Card", fields: ["UID", "Name", "DOB", "Address"], icon: IdCard },
+        { name: "Health Insurance", fields: ["Policy No", "Member", "Coverage", "Validity"], icon: CreditCard },
+        { name: "Discharge Summary", fields: ["Patient", "Diagnosis", "Treatment", "Date"], icon: FileCheck }
+      ]
+    },
+    legal: {
+      name: "Legal & Property",
+      icon: Scale,
+      description: "Extract structured data from legal agreements and property documents",
+      documents: [
+        { name: "Rent Agreement", fields: ["Landlord", "Tenant", "Rent", "Duration"], icon: Home },
+        { name: "Sale Deed", fields: ["Seller", "Buyer", "Property", "Value"], icon: FileText },
+        { name: "Aadhaar Card", fields: ["UID", "Name", "DOB", "Address"], icon: IdCard },
+        { name: "PAN Card", fields: ["PAN Number", "Name", "DOB"], icon: CreditCard },
+        { name: "Property Tax Receipt", fields: ["Property ID", "Owner", "Amount", "Year"], icon: Receipt },
+        { name: "NOC Document", fields: ["Issuer", "Purpose", "Date", "Validity"], icon: FileCheck }
+      ]
+    },
+    ecommerce: {
+      name: "E-Commerce & Retail",
+      icon: ShoppingBag,
+      description: "Automate invoice processing and supply chain document handling",
+      documents: [
+        { name: "GST Invoice", fields: ["Invoice No", "GSTIN", "Items", "Total"], icon: Receipt },
+        { name: "Purchase Order", fields: ["PO Number", "Vendor", "Items", "Value"], icon: Package },
+        { name: "Delivery Challan", fields: ["Challan No", "Items", "Qty", "Receiver"], icon: FileCheck },
+        { name: "E-way Bill", fields: ["Bill Number", "HSN", "Vehicle", "Value"], icon: Receipt },
+        { name: "Credit Note", fields: ["CN Number", "Reason", "Amount", "Date"], icon: FileText },
+        { name: "Debit Note", fields: ["DN Number", "Reason", "Amount", "Date"], icon: FileText }
+      ]
+    }
   };
 
   const features = [
@@ -44,15 +136,6 @@ const LandingPage = () => {
       title: "Simple Integration",
       description: "RESTful API with SDKs for Python, Node.js, and more"
     }
-  ];
-
-  const documentTypes = [
-    { icon: <IdCard className="w-8 h-8" />, name: "Aadhaar Card", fields: "12-digit UID, Name, DOB, Address" },
-    { icon: <CreditCard className="w-8 h-8" />, name: "PAN Card", fields: "PAN Number, Name, Father's Name, DOB" },
-    { icon: <Car className="w-8 h-8" />, name: "Driving License", fields: "DL Number, Name, Validity, Vehicle Class" },
-    { icon: <FileText className="w-8 h-8" />, name: "Invoices & Bills", fields: "Invoice No, Items, GST, Total Amount" },
-    { icon: <CreditCard className="w-8 h-8" />, name: "Bank Cheques", fields: "Cheque No, Payee, Amount, Bank Details" },
-    { icon: <FileText className="w-8 h-8" />, name: "Medical Records", fields: "Prescriptions, Lab Reports, Patient Info" }
   ];
 
   const pricingPlans = [
@@ -231,41 +314,109 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Document Types Section */}
+      {/* Solutions by Industry Section */}
       <section id="documents" className="py-20 px-4 bg-card/30">
         <div className="max-w-7xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
             <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4">
-              Supported Documents
+              Built For Every Industry
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Extract structured data from IDs, business documents, financial records & medical files
+              Click your industry to see supported documents
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {documentTypes.map((doc, index) => (
-              <motion.div
-                key={doc.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="p-4 bg-card/50 backdrop-blur border-border/50 hover:border-accent/30 transition-all duration-300 group h-full">
-                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-3 group-hover:scale-110 transition-transform">
-                    {doc.icon}
+          <div className="grid lg:grid-cols-12 gap-6">
+            {/* Industry Sidebar */}
+            <div className="lg:col-span-4 xl:col-span-3">
+              <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-4 lg:pb-0">
+                {Object.entries(industries).map(([key, industry]) => {
+                  const IconComponent = industry.icon;
+                  const isSelected = selectedIndustry === key;
+                  return (
+                    <motion.button
+                      key={key}
+                      onClick={() => setSelectedIndustry(key)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-300 min-w-[200px] lg:min-w-0 lg:w-full ${
+                        isSelected 
+                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+                          : 'bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        isSelected ? 'bg-white/20' : 'bg-primary/10'
+                      }`}>
+                        <IconComponent className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-primary'}`} />
+                      </div>
+                      <span className="font-medium text-sm">{industry.name}</span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Documents Panel */}
+            <div className="lg:col-span-8 xl:col-span-9">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedIndustry}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Industry Description */}
+                  <div className="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                    <p className="text-muted-foreground">
+                      {industries[selectedIndustry].description}
+                    </p>
                   </div>
-                  <h3 className="font-heading text-base font-semibold mb-1">{doc.name}</h3>
-                  <p className="text-xs text-muted-foreground">{doc.fields}</p>
-                </Card>
-              </motion.div>
-            ))}
+
+                  {/* Document Cards Grid */}
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {industries[selectedIndustry].documents.map((doc, index) => {
+                      const DocIcon = doc.icon;
+                      return (
+                        <motion.div
+                          key={doc.name}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Card className="p-4 bg-card/50 backdrop-blur border-border/50 hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 h-full group">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0 group-hover:scale-110 transition-transform">
+                                <DocIcon className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-heading font-semibold text-sm mb-2">{doc.name}</h4>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {doc.fields.map((field) => (
+                                    <span 
+                                      key={field}
+                                      className="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-muted text-muted-foreground"
+                                    >
+                                      {field}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </section>
