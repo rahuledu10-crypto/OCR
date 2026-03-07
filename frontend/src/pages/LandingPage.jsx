@@ -24,12 +24,15 @@ import {
   FileCheck,
   Stethoscope,
   Home,
-  Package
+  Package,
+  Menu,
+  X
 } from 'lucide-react';
 
 const LandingPage = () => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState('logistics');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const copyCode = () => {
     navigator.clipboard.writeText(`curl -X POST "https://api.ocrextract.io/api/v1/extract" \\
@@ -189,17 +192,78 @@ const LandingPage = () => {
               <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">API Docs</Link>
             </div>
             <div className="flex items-center gap-3">
-              <Link to="/login">
+              <Link to="/login" className="hidden sm:block">
                 <Button variant="ghost" data-testid="nav-login-btn">Log in</Button>
               </Link>
-              <Link to="/register">
+              <Link to="/register" className="hidden sm:block">
                 <Button data-testid="nav-signup-btn" className="bg-primary hover:bg-primary/90 shadow-[0_0_20px_rgba(99,102,241,0.3)]">
                   Get Started
                 </Button>
               </Link>
+              {/* Mobile menu button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                data-testid="mobile-menu-toggle"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </Button>
             </div>
           </div>
         </div>
+        
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-card border-t border-border"
+            >
+              <div className="px-4 py-4 space-y-3">
+                <a 
+                  href="#features" 
+                  className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Features
+                </a>
+                <a 
+                  href="#documents" 
+                  className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Solutions
+                </a>
+                <a 
+                  href="#pricing" 
+                  className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
+                </a>
+                <Link 
+                  to="/docs" 
+                  className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  API Docs
+                </Link>
+                <div className="pt-3 border-t border-border space-y-2">
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full">Log in</Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full bg-primary hover:bg-primary/90">Get Started</Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Hero Section */}
@@ -581,10 +645,10 @@ const LandingPage = () => {
           </div>
           <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; 2026 ExtractAI. All rights reserved.
+              &copy; 2025 ExtractAI. All rights reserved.
             </p>
             <p className="text-sm text-muted-foreground">
-              Made in India 🇮🇳
+              Made in India
             </p>
           </div>
         </div>

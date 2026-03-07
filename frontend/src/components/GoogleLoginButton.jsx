@@ -1,33 +1,23 @@
 import { Button } from '../components/ui/button';
+import { toast } from 'sonner';
 
-// Google OAuth configuration - uses Emergent managed OAuth
-const GOOGLE_CLIENT_ID = "839038546498-72esbijh2i1rn99fq8t6ims3p1r2r7nc.apps.googleusercontent.com";
-
-const GoogleLoginButton = ({ onSuccess, onError }) => {
+const GoogleLoginButton = () => {
   const handleGoogleLogin = () => {
-    // Calculate the callback URL
-    const currentUrl = window.location.origin;
-    const callbackUrl = `${currentUrl}/auth/google/callback`;
-    
-    // Build Google OAuth URL using Emergent's OAuth endpoint
-    const googleAuthUrl = `https://demobackend.emergentagent.com/auth/v1/env/oauth?` + 
-      `client_id=${GOOGLE_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
-      `&response_type=code` +
-      `&scope=email%20profile` +
-      `&access_type=offline` +
-      `&prompt=consent`;
-    
-    // Redirect to Google OAuth
-    window.location.href = googleAuthUrl;
+    // Google OAuth requires proper configuration after deployment
+    // Show a user-friendly message for now
+    toast.info('Google login will be available after deployment', {
+      description: 'Please use email/password to sign in for now.',
+      duration: 4000
+    });
   };
 
   return (
     <Button
       type="button"
       variant="outline"
-      className="w-full h-12 gap-3 text-base"
+      className="w-full h-12 gap-3 text-base opacity-60 cursor-not-allowed"
       onClick={handleGoogleLogin}
+      data-testid="google-login-btn"
     >
       <svg className="w-5 h-5" viewBox="0 0 24 24">
         <path
@@ -48,6 +38,7 @@ const GoogleLoginButton = ({ onSuccess, onError }) => {
         />
       </svg>
       Continue with Google
+      <span className="ml-1 text-xs text-muted-foreground">(Coming soon)</span>
     </Button>
   );
 };

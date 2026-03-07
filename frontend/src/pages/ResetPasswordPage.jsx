@@ -29,8 +29,8 @@ const ResetPasswordPage = () => {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters');
       return;
     }
 
@@ -120,11 +120,11 @@ const ResetPasswordPage = () => {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Min 6 characters"
+                    placeholder="Min 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={8}
                     className="bg-background/50"
                   />
                 </div>

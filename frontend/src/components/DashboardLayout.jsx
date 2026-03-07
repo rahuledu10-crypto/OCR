@@ -129,13 +129,21 @@ const DashboardLayout = () => {
             ))}
             
             {/* Support Link */}
-            <a
-              href="mailto:support@extractai.in"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors mt-4"
+            <Link
+              to="/dashboard/support"
+              data-testid="nav-support"
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mt-4",
+                location.pathname === '/dashboard/support'
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+              onClick={() => setSidebarOpen(false)}
             >
               <HelpCircle className="w-5 h-5" />
               Support
-            </a>
+              {location.pathname === '/dashboard/support' && <ChevronRight className="w-4 h-4 ml-auto" />}
+            </Link>
           </nav>
 
           {/* User section */}

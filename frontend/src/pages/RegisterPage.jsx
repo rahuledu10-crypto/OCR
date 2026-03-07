@@ -103,11 +103,11 @@ const RegisterPage = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Min 6 characters"
+                  placeholder="Min 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   data-testid="register-password-input"
                   className="bg-background/50"
                 />
