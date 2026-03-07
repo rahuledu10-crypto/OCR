@@ -123,18 +123,18 @@ const LandingPage = () => {
   const features = [
     {
       icon: <Zap className="w-6 h-6" />,
-      title: "Lightning Fast",
-      description: "Extract data in under 2 seconds with our optimized AI pipeline"
+      title: "Sub-2s Response",
+      description: "Production-grade latency. Process documents at scale without bottlenecks."
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Enterprise Security",
-      description: "SOC2 compliant with end-to-end encryption for all documents"
+      title: "Bank-Grade Security",
+      description: "End-to-end encryption. Your documents are processed and immediately discarded."
     },
     {
       icon: <Code className="w-6 h-6" />,
-      title: "Simple Integration",
-      description: "RESTful API with SDKs for Python, Node.js, and more"
+      title: "Developer First",
+      description: "RESTful API, SDKs for Python & Node.js, webhooks, and batch processing."
     }
   ];
 
@@ -184,9 +184,9 @@ const LandingPage = () => {
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
-              <a href="#documents" className="text-muted-foreground hover:text-foreground transition-colors">Documents</a>
+              <a href="#documents" className="text-muted-foreground hover:text-foreground transition-colors">Solutions</a>
               <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-              <a href="#docs" className="text-muted-foreground hover:text-foreground transition-colors">API Docs</a>
+              <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">API Docs</Link>
             </div>
             <div className="flex items-center gap-3">
               <Link to="/login">
@@ -212,33 +212,55 @@ const LandingPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center max-w-4xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-sm text-muted-foreground">Trusted by 500+ businesses across India</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-6">
+              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="text-sm font-medium text-accent">Powering document intelligence for 500+ companies</span>
             </div>
             <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-              Document OCR API
-              <span className="gradient-text block">10x Cheaper Than Competition</span>
+              The API that reads
+              <span className="gradient-text block">every document</span>
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
-              Extract data from Aadhaar, PAN, invoices, cheques & 15+ document types. 
-              One API call, instant results, enterprise-grade accuracy.
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+              Extract structured data from IDs, invoices, cheques, and 15+ document types 
+              with a single API call. Built for developers who need accuracy at scale.
             </p>
-            <p className="text-2xl font-bold text-primary mb-8">
-              Just ₹0.20/extraction • 100 FREE to start
-            </p>
+            
+            {/* Stats Row */}
+            <div className="flex flex-wrap items-center justify-center gap-8 mb-10">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-foreground">99.2%</p>
+                <p className="text-sm text-muted-foreground">Accuracy</p>
+              </div>
+              <div className="w-px h-10 bg-border hidden sm:block" />
+              <div className="text-center">
+                <p className="text-3xl font-bold text-foreground">&lt;2s</p>
+                <p className="text-sm text-muted-foreground">Response time</p>
+              </div>
+              <div className="w-px h-10 bg-border hidden sm:block" />
+              <div className="text-center">
+                <p className="text-3xl font-bold text-foreground">15+</p>
+                <p className="text-sm text-muted-foreground">Document types</p>
+              </div>
+              <div className="w-px h-10 bg-border hidden sm:block" />
+              <div className="text-center">
+                <p className="text-3xl font-bold text-accent">₹0.20</p>
+                <p className="text-sm text-muted-foreground">Per extraction</p>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/register">
-                <Button size="lg" data-testid="hero-cta-btn" className="bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.4)] text-lg px-8">
-                  Get 100 Free Extractions <ArrowRight className="ml-2 w-5 h-5" />
+                <Button size="lg" data-testid="hero-cta-btn" className="bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.4)] text-lg px-8 h-14">
+                  Start Building — It's Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/dashboard/docs">
-                <Button size="lg" variant="outline" data-testid="hero-docs-btn" className="text-lg px-8">
-                  View Documentation
+              <Link to="/docs">
+                <Button size="lg" variant="outline" data-testid="hero-docs-btn" className="text-lg px-8 h-14">
+                  Read the Docs
                 </Button>
               </Link>
             </div>
+            <p className="text-sm text-muted-foreground mt-4">100 free extractions • No credit card required</p>
           </motion.div>
 
           {/* Code Preview */}
@@ -487,61 +509,80 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-24 px-4">
+        <div className="max-w-5xl mx-auto text-center">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="p-12 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4">
-                Start Extracting in 2 Minutes
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-                No credit card required. Get 100 free extractions instantly.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span>100 free extractions</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span>No credit card needed</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span>Setup in 2 minutes</span>
-                </div>
-              </div>
+            <h2 className="font-heading text-3xl sm:text-5xl font-bold mb-6">
+              Ready to automate document processing?
+            </h2>
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+              Join hundreds of companies using ExtractAI to eliminate manual data entry 
+              and accelerate their operations.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/register">
-                <Button size="lg" data-testid="cta-signup-btn" className="bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.4)]">
-                  Create Free Account <ArrowRight className="ml-2 w-5 h-5" />
+                <Button size="lg" data-testid="cta-signup-btn" className="bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(99,102,241,0.4)] text-lg px-10 h-14">
+                  Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-            </Card>
+              <a href="mailto:sales@extractai.in">
+                <Button size="lg" variant="outline" className="text-lg px-10 h-14">
+                  Talk to Sales
+                </Button>
+              </a>
+            </div>
+            <p className="text-sm text-muted-foreground mt-6">
+              100 free extractions • No credit card required • Setup in 2 minutes
+            </p>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t border-border/50">
+      <footer className="py-16 px-4 border-t border-border/50 bg-card/30">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <FileText className="w-5 h-5 text-white" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-heading font-bold text-xl">ExtractAI</span>
               </div>
-              <span className="font-heading font-bold">ExtractAI</span>
+              <p className="text-muted-foreground text-sm max-w-sm">
+                The document intelligence API for modern businesses. 
+                Extract structured data from any document with a single API call.
+              </p>
             </div>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <a href="mailto:support@extractai.in" className="hover:text-foreground transition-colors">support@extractai.in</a>
-              <a href="#docs" className="hover:text-foreground transition-colors">API Docs</a>
-              <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+            <div>
+              <h4 className="font-heading font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                <li><Link to="/docs" className="hover:text-foreground transition-colors">API Documentation</Link></li>
+                <li><a href="#documents" className="hover:text-foreground transition-colors">Supported Documents</a></li>
+              </ul>
             </div>
+            <div>
+              <h4 className="font-heading font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="mailto:support@extractai.in" className="hover:text-foreground transition-colors">Support</a></li>
+                <li><a href="mailto:sales@extractai.in" className="hover:text-foreground transition-colors">Sales</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
               &copy; 2026 ExtractAI. All rights reserved.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Made in India 🇮🇳
             </p>
           </div>
         </div>

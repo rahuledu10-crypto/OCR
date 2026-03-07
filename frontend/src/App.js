@@ -3,6 +3,7 @@ import { Toaster } from "./components/ui/sonner";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import PublicDocsPage from "./pages/PublicDocsPage";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardOverview from "./pages/DashboardOverview";
 import APIKeysPage from "./pages/APIKeysPage";
@@ -38,6 +39,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/docs" element={<PublicDocsPage />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <DashboardLayout />
