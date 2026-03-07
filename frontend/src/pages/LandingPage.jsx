@@ -638,15 +638,20 @@ const LandingPage = () => {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="mailto:support@extractai.in" className="hover:text-foreground transition-colors">Support</a></li>
                 <li><a href="mailto:sales@extractai.in" className="hover:text-foreground transition-colors">Sales</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
+                <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
           <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              &copy; 2025 ExtractAI. All rights reserved.
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                &copy; 2025 ExtractAI. All rights reserved.
+              </p>
+              <span className="text-muted-foreground/30 hidden sm:inline">|</span>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">Terms</Link>
+              <Link to="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">Privacy</Link>
+            </div>
             <p className="text-sm text-muted-foreground">
               Made in India
             </p>

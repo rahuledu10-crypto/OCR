@@ -310,11 +310,14 @@ const APIKeysPage = () => {
         </div>
       ) : (
         <Card className="bg-card/50 backdrop-blur border-border/50">
-          <CardContent className="py-12 text-center">
-            <Key className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-heading font-semibold text-lg mb-2">No API keys yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first API key to start using the OCR API
+          <CardContent className="py-16 text-center" data-testid="empty-api-keys">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
+              <Key className="w-10 h-10 text-muted-foreground/50" />
+            </div>
+            <h3 className="font-heading font-semibold text-xl mb-2">Create your first API key</h3>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              API keys let you authenticate requests to the ExtractAI API. 
+              Create a key to start integrating document extraction into your app.
             </p>
             <Button 
               onClick={() => setCreateDialogOpen(true)}

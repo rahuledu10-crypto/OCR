@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 import { 
   Select,
   SelectContent,
@@ -28,7 +30,9 @@ import {
   FileText,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  PlayCircle,
+  BarChart3
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -95,6 +99,44 @@ const AnalyticsPage = () => {
   const avgProcessingTime = recentExtractions.length > 0
     ? (recentExtractions.reduce((acc, e) => acc + (e.processing_time_ms || 0), 0) / recentExtractions.length).toFixed(0)
     : 0;
+
+  // Check if user has no extractions yet
+  const hasNoData = !stats?.total_requests || stats.total_requests === 0;
+
+  // Empty state for new users
+  if (hasNoData) {
+    return (
+      <div data-testid="analytics-page" className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="font-heading text-2xl font-bold">Analytics</h1>
+          <p className="text-muted-foreground">Monitor your API usage and performance metrics</p>
+        </div>
+
+        {/* Empty State */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center py-16"
+        >
+          <div className="w-24 h-24 rounded-full bg-muted/30 flex items-center justify-center mb-6">
+            <BarChart3 className="w-12 h-12 text-muted-foreground" />
+          </div>
+          <h2 className="font-heading text-xl font-semibold mb-2">No Analytics Yet</h2>
+          <p className="text-muted-foreground text-center max-w-md mb-6">
+            Make your first extraction in the Playground to see your analytics here.
+            Track usage, success rates, and document type breakdowns.
+          </p>
+          <Link to="/dashboard/playground">
+            <Button className="bg-primary hover:bg-primary/90" data-testid="go-to-playground-btn">
+              <PlayCircle className="w-4 h-4 mr-2" />
+              Go to Playground
+            </Button>
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div data-testid="analytics-page" className="space-y-6">

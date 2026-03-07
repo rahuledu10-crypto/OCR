@@ -8,6 +8,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardOverview from "./pages/DashboardOverview";
 import APIKeysPage from "./pages/APIKeysPage";
@@ -15,7 +17,9 @@ import PlaygroundPage from "./pages/PlaygroundPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import DocsPage from "./pages/DocsPage";
 import SupportPage from "./pages/SupportPage";
+import GlobalUpgradeModal from "./components/GlobalUpgradeModal";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { UpgradeModalProvider } from "./context/UpgradeModalContext";
 import "./App.css";
 
 const ProtectedRoute = ({ children }) => {
@@ -39,36 +43,41 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/docs" element={<PublicDocsPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
-          
-          {/* Protected dashboard routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<DashboardOverview />} />
-            <Route path="keys" element={<APIKeysPage />} />
-            <Route path="playground" element={<PlaygroundPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="docs" element={<DocsPage />} />
-            <Route path="support" element={<SupportPage />} />
-          </Route>
+      <UpgradeModalProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/docs" element={<PublicDocsPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            
+            {/* Protected dashboard routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<DashboardOverview />} />
+              <Route path="keys" element={<APIKeysPage />} />
+              <Route path="playground" element={<PlaygroundPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="docs" element={<DocsPage />} />
+              <Route path="support" element={<SupportPage />} />
+            </Route>
 
-          {/* 404 Catch-all route */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-        <Toaster position="top-right" richColors />
-      </BrowserRouter>
+            {/* 404 Catch-all route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+          <Toaster position="top-right" richColors />
+          <GlobalUpgradeModal />
+        </BrowserRouter>
+      </UpgradeModalProvider>
     </AuthProvider>
   );
 }

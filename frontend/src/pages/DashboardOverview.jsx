@@ -376,9 +376,20 @@ const DashboardOverview = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No recent activity</p>
+              <div className="text-center py-8" data-testid="empty-recent-extractions">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-muted-foreground/50" />
+                </div>
+                <p className="font-medium text-foreground mb-1">No extractions yet</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Try the Playground to make your first extraction
+                </p>
+                <Link to="/dashboard/playground">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Go to Playground
+                  </Button>
+                </Link>
               </div>
             )}
           </CardContent>
