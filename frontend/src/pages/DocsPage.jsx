@@ -479,6 +479,57 @@ console.log(response.data);`,
               </div>
             </CardContent>
           </Card>
+
+          {/* SDKs */}
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">SDKs</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <p className="text-muted-foreground">
+                Official SDKs for quick integration:
+              </p>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="font-medium">Python</p>
+                <code className="text-xs text-muted-foreground">pip install extractai</code>
+              </div>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="font-medium">Node.js</p>
+                <code className="text-xs text-muted-foreground">npm install extractai</code>
+              </div>
+              <a 
+                href="https://docs.extractai.io" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary text-xs hover:underline"
+              >
+                View full SDK documentation →
+              </a>
+            </CardContent>
+          </Card>
+
+          {/* Webhooks */}
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">Webhooks</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <p className="text-muted-foreground">
+                Get notified when extractions complete:
+              </p>
+              <div className="p-3 bg-muted/30 rounded-lg space-y-1">
+                <p className="font-medium text-xs">Events</p>
+                <p className="text-xs text-muted-foreground font-mono">extraction.completed</p>
+                <p className="text-xs text-muted-foreground font-mono">extraction.failed</p>
+              </div>
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="font-medium text-xs">Setup</p>
+                <p className="text-xs text-muted-foreground">
+                  POST /api/webhooks with your endpoint URL
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
