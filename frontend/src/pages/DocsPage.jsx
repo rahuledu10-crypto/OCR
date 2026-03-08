@@ -92,6 +92,38 @@ console.log(response.data);`,
   "confidence": 0.95,
   "processing_time_ms": 1250,
   "timestamp": "2024-01-15T10:30:00Z"
+}`,
+    batchCurl: `curl -X POST "${BACKEND_URL}/api/v1/batch-extract" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "images": [
+      {"image_base64": "BASE64_IMAGE_1", "document_type": "aadhaar"},
+      {"image_base64": "BASE64_IMAGE_2", "document_type": "pan"}
+    ]
+  }'`,
+    batchResponse: `{
+  "batch_id": "b1234-5678-uuid",
+  "total": 2,
+  "successful": 2,
+  "failed": 0,
+  "results": [
+    {
+      "index": 0,
+      "success": true,
+      "document_type": "aadhaar",
+      "extracted_data": {"name": "...", "aadhaar_number": "..."},
+      "confidence": 0.95
+    },
+    {
+      "index": 1,
+      "success": true,
+      "document_type": "pan",
+      "extracted_data": {"name": "...", "pan_number": "..."},
+      "confidence": 0.92
+    }
+  ],
+  "processing_time_ms": 4500
 }`
   };
 
@@ -272,6 +304,92 @@ console.log(response.data);`,
                 >
                   {copiedSection === 'response' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Batch Processing */}
+          <Card className="bg-card/50 backdrop-blur border-border/50">
+            <CardHeader>
+              <CardTitle className="font-heading text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Batch Processing
+              </CardTitle>
+              <CardDescription>POST /api/v1/batch-extract — Process up to 10 documents at once</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">Request Body</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 pr-4 font-medium">Parameter</th>
+                        <th className="text-left py-2 pr-4 font-medium">Type</th>
+                        <th className="text-left py-2 font-medium">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-mono text-primary">images</td>
+                        <td className="py-2 pr-4">array</td>
+                        <td className="py-2 text-muted-foreground">Array of image objects (max 10)</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-mono text-primary">images[].image_base64</td>
+                        <td className="py-2 pr-4">string</td>
+                        <td className="py-2 text-muted-foreground">Base64-encoded image (required)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 pr-4 font-mono text-primary">images[].document_type</td>
+                        <td className="py-2 pr-4">string</td>
+                        <td className="py-2 text-muted-foreground">Document type hint (optional)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Example Request</h4>
+                <div className="relative">
+                  <pre className="p-4 bg-muted/50 rounded-lg overflow-x-auto text-sm font-mono max-h-60">
+                    <code>{codeExamples.batchCurl}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyCode(codeExamples.batchCurl, 'batchCurl')}
+                    data-testid="copy-batch-curl-btn"
+                  >
+                    {copiedSection === 'batchCurl' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Response</h4>
+                <div className="relative">
+                  <pre className="p-4 bg-muted/50 rounded-lg overflow-x-auto text-sm font-mono max-h-60">
+                    <code>{codeExamples.batchResponse}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyCode(codeExamples.batchResponse, 'batchResponse')}
+                    data-testid="copy-batch-response-btn"
+                  >
+                    {copiedSection === 'batchResponse' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Tip:</strong> Batch processing is ideal for KYC verification (Aadhaar + PAN), bulk invoice processing, or employee onboarding.
+                </p>
               </div>
             </CardContent>
           </Card>

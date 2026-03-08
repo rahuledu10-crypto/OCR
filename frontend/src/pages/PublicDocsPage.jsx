@@ -239,6 +239,98 @@ console.log(result.name);            // "John Doe"`;
                 </Card>
               </section>
 
+              {/* Batch Processing */}
+              <section id="batch">
+                <h2 className="font-heading text-2xl font-bold mb-4">Batch Processing</h2>
+                <p className="text-muted-foreground mb-4">
+                  Process up to 10 documents in a single API call. Ideal for KYC verification, bulk onboarding, or invoice processing.
+                </p>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-2 py-1 bg-green-500/20 text-green-500 text-xs font-mono rounded">POST</span>
+                  <code className="text-sm">/api/v1/batch-extract</code>
+                </div>
+                
+                <h3 className="font-semibold mt-6 mb-2">Request Body</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 pr-4">Parameter</th>
+                        <th className="text-left py-2 pr-4">Type</th>
+                        <th className="text-left py-2">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-muted-foreground">
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-mono">images</td>
+                        <td className="py-2 pr-4">array</td>
+                        <td className="py-2">Array of image objects (max 10)</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-mono">images[].image_base64</td>
+                        <td className="py-2 pr-4">string</td>
+                        <td className="py-2">Base64-encoded image (required)</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-mono">images[].document_type</td>
+                        <td className="py-2 pr-4">string</td>
+                        <td className="py-2">Document type hint (optional)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <h3 className="font-semibold mt-6 mb-2">Example Request</h3>
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <pre className="p-4 overflow-x-auto text-sm">
+                    <code className="text-green-400">{`curl -X POST "https://api.extractai.io/api/v1/batch-extract" \\
+  -H "X-API-Key: ocr_your_api_key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "images": [
+      {"image_base64": "...", "document_type": "aadhaar"},
+      {"image_base64": "...", "document_type": "pan"}
+    ]
+  }'`}</code>
+                  </pre>
+                </Card>
+
+                <h3 className="font-semibold mt-6 mb-2">Response</h3>
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <pre className="p-4 overflow-x-auto text-sm">
+                    <code className="text-blue-400">{`{
+  "batch_id": "b1234-5678-uuid",
+  "total": 2,
+  "successful": 2,
+  "failed": 0,
+  "results": [
+    {
+      "index": 0,
+      "success": true,
+      "document_type": "aadhaar",
+      "extracted_data": {"name": "...", "aadhaar_number": "..."},
+      "confidence": 0.95
+    },
+    {
+      "index": 1,
+      "success": true,
+      "document_type": "pan",
+      "extracted_data": {"name": "...", "pan_number": "..."},
+      "confidence": 0.92
+    }
+  ],
+  "processing_time_ms": 4500
+}`}</code>
+                  </pre>
+                </Card>
+
+                <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm">
+                    <strong>Tip:</strong> Batch processing is more cost-effective for multiple documents. Each successful extraction in the batch counts as one usage.
+                  </p>
+                </div>
+              </section>
+
               {/* Document Types */}
               <section id="documents">
                 <h2 className="font-heading text-2xl font-bold mb-4">Supported Document Types</h2>
