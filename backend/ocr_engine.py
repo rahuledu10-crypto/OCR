@@ -287,7 +287,7 @@ ALWAYS return valid JSON. Extract as much information as possible."""
     try:
         # Initialize Gemini model
         model = genai.GenerativeModel(
-            model_name='gemini-2.0-flash',
+            model_name='gemini-3-flash-preview',
             system_instruction=system_prompt
         )
         
@@ -313,10 +313,10 @@ Return ONLY valid JSON with the extracted data."""
             "data": image_data
         }
         
-        logger.info(f"Sending image to Gemini 2.0 Flash for {document_type or 'auto'} extraction")
+        logger.info(f"Sending image to Gemini 3 Flash for {document_type or 'auto'} extraction")
         response = model.generate_content([prompt, image_part])
         response_text = response.text
-        logger.info(f"Gemini 2.0 Flash response received: {len(response_text)} chars")
+        logger.info(f"Gemini 3 Flash response received: {len(response_text)} chars")
         
         # Parse JSON response
         json_match = re.search(r'\{[\s\S]*\}', response_text)
@@ -374,7 +374,7 @@ Return ONLY valid JSON with the extracted data."""
             )
             
     except Exception as e:
-        logger.error(f"Gemini 2.0 Flash extraction error: {e}")
+        logger.error(f"Gemini 3 Flash extraction error: {e}")
         raise ValueError(f"OCR processing failed: {str(e)}")
 
 
