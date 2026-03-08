@@ -102,12 +102,14 @@ async def extract_document(image_base64: str, document_type: Optional[str] = Non
     - Input: $0.50/1M tokens (~1500 tokens per image = $0.00075)
     - Output: $3.00/1M tokens (~300 tokens output = $0.0009)
     """
-    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    import google.generativeai as genai
+    import base64
     
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    api_key = os.environ.get('GOOGLE_API_KEY') or os.environ.get('EMERGENT_LLM_KEY')
     if not api_key:
-        raise ValueError("EMERGENT_LLM_KEY not configured")
+        raise ValueError("GOOGLE_API_KEY not configured")
     
+    genai.configure(api_key=api_key)
     # Build the system prompt for document extraction
     system_prompt = """You are an expert OCR system for extracting information from documents.
 
@@ -283,11 +285,11 @@ OUTPUT FORMAT (JSON only):
 ALWAYS return valid JSON. Extract as much information as possible."""
 
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"ocr_{uuid.uuid4()}",
-            system_message=system_prompt
-        ).with_model("gemini", "gemini-3-flash-preview")
+        # Initialize Gemini model
+        model = genai.GenerativeModel(
+            model_name='gemini-1.5-flash',
+            system_instruction=system_prompt
+        )
         
         # Build prompt based on document type hint
         if document_type and document_type != "auto":
@@ -302,15 +304,22 @@ This could be an ID document, business document, financial document, medical doc
 Pay special attention to numbers, dates, and names - read each character carefully.
 Return ONLY valid JSON with the extracted data."""
         
-        image_content = ImageContent(image_base64=image_base64)
-        user_message = UserMessage(text=prompt, file_contents=[image_content])
+        # Decode base64 image
+        image_data = base64.b64decode(image_base64)
         
-        logger.info(f"Sending image to Gemini 3 Flash for {document_type or 'auto'} extraction")
-        response = await chat.send_message(user_message)
-        logger.info(f"Gemini 3 Flash response received: {len(response)} chars")
+        # Create image part for Gemini
+        image_part = {
+            "mime_type": "image/jpeg",
+            "data": image_data
+        }
+        
+        logger.info(f"Sending image to Gemini 1.5 Flash for {document_type or 'auto'} extraction")
+        response = model.generate_content([prompt, image_part])
+        response_text = response.text
+        logger.info(f"Gemini 1.5 Flash response received: {len(response_text)} chars")
         
         # Parse JSON response
-        json_match = re.search(r'\{[\s\S]*\}', response)
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
         if json_match:
             data = json.loads(json_match.group())
             
@@ -345,7 +354,7 @@ Return ONLY valid JSON with the extracted data."""
             return ExtractionResult(
                 document_type=doc_type,
                 extracted_data=extracted,
-                raw_text=response,
+                raw_text=response_text,
                 confidence=round(confidence, 2),
                 extraction_method="gemini_flash",
                 quality_score=round(confidence, 2),
@@ -356,8 +365,8 @@ Return ONLY valid JSON with the extracted data."""
             # Couldn't parse JSON - return raw response
             return ExtractionResult(
                 document_type="unknown",
-                extracted_data={"raw_response": response[:500]},
-                raw_text=response,
+                extracted_data={"raw_response": response_text[:500]},
+                raw_text=response_text,
                 confidence=0.3,
                 extraction_method="gemini_flash",
                 quality_score=0.3,
@@ -365,7 +374,7 @@ Return ONLY valid JSON with the extracted data."""
             )
             
     except Exception as e:
-        logger.error(f"Gemini 3 Flash extraction error: {e}")
+        logger.error(f"Gemini 1.5 Flash extraction error: {e}")
         raise ValueError(f"OCR processing failed: {str(e)}")
 
 
