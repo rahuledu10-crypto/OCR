@@ -59,8 +59,8 @@ Single API call to extract structured data from any supported document.
 | Usage analytics | ✅ Live |
 | Multi-tier pricing | ✅ Live |
 | Razorpay payments | 🟡 Mocked |
-| Google OAuth | 🟡 Mocked |
-| Email notifications | 🟡 Mocked |
+| Google OAuth | ✅ Live |
+| Email notifications | ✅ Live (via Resend API) |
 | Webhooks | ✅ Live |
 
 ### Supported Document Types
@@ -1179,6 +1179,26 @@ curl https://your-domain.com/api/health
 
 ---
 
-**Document Version:** 1.0  
+## Changelog
+
+### March 9, 2026
+**Google OAuth Profile Completion Feature**
+- Fixed Google OAuth flow to properly redirect users to dashboard after login
+- Added `ProfileCompletionModal` component to collect company_name from new Google users
+- Differentiated Google button text: "Continue with Google" (Login) vs "Sign up with Google" (Register)
+- Added backend endpoint `PATCH /api/users/me/complete-profile`
+- Updated user schema to store Google `name` separately from `company_name`
+- All tests passing (100% backend, 100% frontend)
+
+**Files Modified:**
+- `/app/frontend/src/components/GoogleLoginButton.jsx` - Added `variant` prop
+- `/app/frontend/src/components/ProfileCompletionModal.jsx` - New component
+- `/app/frontend/src/pages/GoogleCallbackPage.jsx` - Show modal for new users
+- `/app/frontend/src/pages/RegisterPage.jsx` - Use variant="register"
+- `/app/backend/server.py` - Added profile completion endpoint, updated user schema
+
+---
+
+**Document Version:** 1.1  
 **Maintained By:** ExtractAI Engineering  
-**Last Review:** March 2025
+**Last Review:** March 2026
