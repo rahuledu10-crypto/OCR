@@ -303,14 +303,25 @@ curl -X POST "https://api.extractai.io/api/v1/extract" \\
         
         msg.attach(MIMEText(html, 'html'))
         
+        logging.info(f"[EMAIL] Attempting to send welcome email to {email} via {SMTP_HOST}:{SMTP_PORT}")
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
         
-        logging.info(f"Welcome email sent to {email}")
+        logging.info(f"[EMAIL] Welcome email sent successfully to {email}")
+    except smtplib.SMTPAuthenticationError as e:
+        logging.error(f"[EMAIL ERROR] SMTP authentication failed for welcome email to {email}: {e}")
+        print(f"[EMAIL ERROR] SMTP authentication failed: {e}")
+    except smtplib.SMTPConnectError as e:
+        logging.error(f"[EMAIL ERROR] SMTP connection failed for welcome email to {email}: {e}")
+        print(f"[EMAIL ERROR] SMTP connection failed: {e}")
+    except smtplib.SMTPException as e:
+        logging.error(f"[EMAIL ERROR] SMTP error sending welcome email to {email}: {e}")
+        print(f"[EMAIL ERROR] SMTP error: {e}")
     except Exception as e:
-        logging.error(f"Failed to send welcome email: {e}")
+        logging.error(f"[EMAIL ERROR] Unexpected error sending welcome email to {email}: {type(e).__name__}: {e}")
+        print(f"[EMAIL ERROR] Unexpected error: {type(e).__name__}: {e}")
 
 async def get_user_usage(user_id: str) -> Dict[str, Any]:
     """Get current month's usage for a user"""
@@ -689,6 +700,10 @@ async def forgot_password(data: ForgotPasswordRequest, background_tasks: Backgro
 
 async def send_reset_email(email: str, token: str):
     """Send password reset email"""
+    if not SMTP_HOST or not SMTP_USER:
+        logging.warning("[EMAIL] SMTP not configured, skipping reset email")
+        return
+    
     try:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = "Reset Your ExtractAI Password"
@@ -720,14 +735,25 @@ async def send_reset_email(email: str, token: str):
         
         msg.attach(MIMEText(html, 'html'))
         
+        logging.info(f"[EMAIL] Attempting to send reset email to {email} via {SMTP_HOST}:{SMTP_PORT}")
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.send_message(msg)
         
-        logging.info(f"Reset email sent to {email}")
+        logging.info(f"[EMAIL] Reset email sent successfully to {email}")
+    except smtplib.SMTPAuthenticationError as e:
+        logging.error(f"[EMAIL ERROR] SMTP authentication failed for reset email to {email}: {e}")
+        print(f"[EMAIL ERROR] SMTP authentication failed: {e}")
+    except smtplib.SMTPConnectError as e:
+        logging.error(f"[EMAIL ERROR] SMTP connection failed for reset email to {email}: {e}")
+        print(f"[EMAIL ERROR] SMTP connection failed: {e}")
+    except smtplib.SMTPException as e:
+        logging.error(f"[EMAIL ERROR] SMTP error sending reset email to {email}: {e}")
+        print(f"[EMAIL ERROR] SMTP error: {e}")
     except Exception as e:
-        logging.error(f"Failed to send reset email: {e}")
+        logging.error(f"[EMAIL ERROR] Unexpected error sending reset email to {email}: {type(e).__name__}: {e}")
+        print(f"[EMAIL ERROR] Unexpected error: {type(e).__name__}: {e}")
 
 @api_router.post("/auth/reset-password")
 async def reset_password(data: ResetPasswordRequest):
