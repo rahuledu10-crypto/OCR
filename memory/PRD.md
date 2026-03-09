@@ -1183,6 +1183,32 @@ curl https://your-domain.com/api/health
 
 ### March 9, 2026
 
+**User Onboarding Flow**
+- Implemented single-screen onboarding to collect user segmentation data after signup
+- 4 user types: Personal use, My business, Building a product, Client work (agency/freelance)
+- Conditional fields based on selection (company name, team size, or building description)
+- Multi-select use cases: ID documents, Invoices, Bank statements, Contracts, Other
+- No skip button - form is intentionally short and easy to complete
+- All data saved to `user.onboarding` in MongoDB for personalization
+- All tests passing (100% backend, 100% frontend)
+
+**New Endpoints:**
+- `POST /api/users/me/onboarding` - Save onboarding data
+- `GET /api/users/me/onboarding` - Get onboarding status
+
+**Routing Logic:**
+- New users → `/onboarding` → `/dashboard`
+- Returning users with completed onboarding → `/dashboard` directly
+- Google OAuth users → `/onboarding` (ProfileCompletionModal removed)
+
+**Files Created/Modified:**
+- `/app/frontend/src/pages/OnboardingPage.jsx` - New onboarding page
+- `/app/frontend/src/App.js` - Updated route protection with onboarding check
+- `/app/frontend/src/pages/GoogleCallbackPage.jsx` - Redirect to onboarding instead of modal
+- `/app/backend/server.py` - Onboarding endpoints, updated login/register to return onboarding data
+
+---
+
 **Razorpay Payment Integration**
 - Wired PlanUpgradeModal to backend Razorpay payment endpoints
 - Full payment flow: click Subscribe → `/api/subscription/create-order` → Razorpay checkout → `/api/subscription/verify-payment`
@@ -1199,23 +1225,19 @@ curl https://your-domain.com/api/health
 
 ---
 
-**Google OAuth Profile Completion Feature**
+**Google OAuth & Button Text Differentiation**
 - Fixed Google OAuth flow to properly redirect users to dashboard after login
-- Added `ProfileCompletionModal` component to collect company_name from new Google users
 - Differentiated Google button text: "Continue with Google" (Login) vs "Sign up with Google" (Register)
-- Added backend endpoint `PATCH /api/users/me/complete-profile`
 - Updated user schema to store Google `name` separately from `company_name`
 - All tests passing (100% backend, 100% frontend)
 
 **Files Modified:**
 - `/app/frontend/src/components/GoogleLoginButton.jsx` - Added `variant` prop
-- `/app/frontend/src/components/ProfileCompletionModal.jsx` - New component
-- `/app/frontend/src/pages/GoogleCallbackPage.jsx` - Show modal for new users
 - `/app/frontend/src/pages/RegisterPage.jsx` - Use variant="register"
-- `/app/backend/server.py` - Added profile completion endpoint, updated user schema
+- `/app/backend/server.py` - Updated user schema
 
 ---
 
-**Document Version:** 1.2  
+**Document Version:** 1.3  
 **Maintained By:** ExtractAI Engineering  
 **Last Review:** March 2026
