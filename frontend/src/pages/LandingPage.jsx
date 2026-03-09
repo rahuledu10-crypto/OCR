@@ -318,7 +318,7 @@ const LandingPage = () => {
                   Start Building — It's Free <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <a href="https://calendly.com/extractai/demo" target="_blank" rel="noopener noreferrer">
+              <a href="https://calendly.com/rahul-extractai/30min" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="outline" data-testid="hero-demo-btn" className="text-lg px-8 h-14">
                   Schedule a Demo
                 </Button>
