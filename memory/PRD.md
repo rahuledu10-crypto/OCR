@@ -58,7 +58,7 @@ Single API call to extract structured data from any supported document.
 | API key management | ✅ Live |
 | Usage analytics | ✅ Live |
 | Multi-tier pricing | ✅ Live |
-| Razorpay payments | 🟡 Mocked |
+| Razorpay payments | ✅ Live (requires API keys) |
 | Google OAuth | ✅ Live |
 | Email notifications | ✅ Live (via Resend API) |
 | Webhooks | ✅ Live |
@@ -1182,6 +1182,23 @@ curl https://your-domain.com/api/health
 ## Changelog
 
 ### March 9, 2026
+
+**Razorpay Payment Integration**
+- Wired PlanUpgradeModal to backend Razorpay payment endpoints
+- Full payment flow: click Subscribe → `/api/subscription/create-order` → Razorpay checkout → `/api/subscription/verify-payment`
+- Razorpay SDK loaded dynamically in modal
+- Test mode supported with mock orders when using placeholder keys
+- All tests passing (100% backend, 100% frontend)
+
+**Required Environment Variables for Live Payments:**
+- `RAZORPAY_KEY_ID` - Your Razorpay Key ID
+- `RAZORPAY_KEY_SECRET` - Your Razorpay Key Secret
+
+**Files Modified:**
+- `/app/frontend/src/components/PlanUpgradeModal.jsx` - Integrated with Razorpay API
+
+---
+
 **Google OAuth Profile Completion Feature**
 - Fixed Google OAuth flow to properly redirect users to dashboard after login
 - Added `ProfileCompletionModal` component to collect company_name from new Google users
@@ -1199,6 +1216,6 @@ curl https://your-domain.com/api/health
 
 ---
 
-**Document Version:** 1.1  
+**Document Version:** 1.2  
 **Maintained By:** ExtractAI Engineering  
 **Last Review:** March 2026
