@@ -58,8 +58,8 @@ const RegisterPage = () => {
             <CardDescription>No credit card required • Setup in 2 minutes</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Google Login */}
-            <GoogleLoginButton />
+            {/* Google Sign Up */}
+            <GoogleLoginButton variant="register" />
             
             {/* Divider */}
             <div className="relative my-6">

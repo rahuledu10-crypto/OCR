@@ -79,6 +79,7 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     email: str
+    name: Optional[str] = None
     company_name: Optional[str] = None
     created_at: str
 
@@ -551,6 +552,7 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
         user=UserResponse(
             id=user_id,
             email=user_data.email,
+            name=None,  # Email signup doesn't provide name
             company_name=user_data.company_name,
             created_at=now
         )
@@ -576,6 +578,7 @@ async def login(credentials: UserLogin):
         user=UserResponse(
             id=user["id"],
             email=user["email"],
+            name=user.get("name"),
             company_name=user.get("company_name"),
             created_at=user["created_at"]
         )
@@ -681,7 +684,8 @@ async def google_callback(code: str, background_tasks: BackgroundTasks):
             "id": user_id,
             "email": email,
             "password_hash": None,  # Google users don't have password
-            "company_name": name,
+            "name": name,  # Store Google name separately
+            "company_name": None,  # Will be collected via profile completion modal
             "google_id": google_id,
             "picture": picture,
             "created_at": now,
@@ -860,9 +864,30 @@ async def get_me(user: dict = Depends(get_current_user)):
     return UserResponse(
         id=user["id"],
         email=user["email"],
+        name=user.get("name"),
         company_name=user.get("company_name"),
         created_at=user["created_at"]
     )
+
+# ========== PROFILE COMPLETION ENDPOINT ==========
+
+class ProfileCompleteRequest(BaseModel):
+    company_name: str
+
+@api_router.patch("/users/me/complete-profile")
+async def complete_profile(data: ProfileCompleteRequest, user: dict = Depends(get_current_user)):
+    """Complete user profile (used after Google OAuth signup)"""
+    if not data.company_name or not data.company_name.strip():
+        raise HTTPException(status_code=400, detail="Company name is required")
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"company_name": data.company_name.strip()}}
+    )
+    
+    logging.info(f"[PROFILE] User {user['email']} completed profile with company: {data.company_name}")
+    
+    return {"message": "Profile updated successfully", "company_name": data.company_name.strip()}
 
 # ========== API KEY ENDPOINTS ==========
 

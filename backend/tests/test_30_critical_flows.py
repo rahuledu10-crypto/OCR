@@ -9,7 +9,7 @@ import time
 import base64
 import json
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://extract-preview-13.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://gemini-ocr.preview.emergentagent.com').rstrip('/')
 
 # Test user credentials
 TEST_EMAIL = f"test_30flows_{int(time.time())}@test.com"

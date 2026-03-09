@@ -9,5 +9,5 @@ import os
 def setup_environment():
     """Setup environment variables for testing"""
     if not os.environ.get('REACT_APP_BACKEND_URL'):
-        os.environ['REACT_APP_BACKEND_URL'] = 'https://extract-preview-13.preview.emergentagent.com'
+        os.environ['REACT_APP_BACKEND_URL'] = 'https://gemini-ocr.preview.emergentagent.com'
     yield

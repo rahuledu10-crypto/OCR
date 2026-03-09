@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -18,26 +18,32 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
+  const fetchUser = useCallback(async (authToken) => {
+    try {
+      const response = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      setUser(response.data);
+      return response.data;
+    } catch (error) {
+      localStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
-        try {
-          const response = await axios.get(`${API}/auth/me`, {
-            headers: { Authorization: `Bearer ${storedToken}` }
-          });
-          setUser(response.data);
-          setToken(storedToken);
-        } catch (error) {
-          localStorage.removeItem('token');
-          setToken(null);
-          setUser(null);
-        }
+        setToken(storedToken);
+        await fetchUser(storedToken);
       }
       setLoading(false);
     };
     initAuth();
-  }, []);
+  }, [fetchUser]);
 
   const login = async (email, password) => {
     const response = await axios.post(`${API}/auth/login`, { email, password });
@@ -61,8 +67,17 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  // Login with token (used for Google OAuth callback)
+  const loginWithToken = async (authToken) => {
+    localStorage.setItem('token', authToken);
+    setToken(authToken);
+    const userData = await fetchUser(authToken);
+    return userData;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };
@@ -78,6 +93,7 @@ export const AuthProvider = ({ children }) => {
       loading, 
       login, 
       register, 
+      loginWithToken,
       logout,
       getAuthHeaders 
     }}>
