@@ -7,6 +7,7 @@ import PublicDocsPage from "./pages/PublicDocsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import GoogleCallbackPage from "./pages/GoogleCallbackPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
@@ -22,7 +23,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { UpgradeModalProvider } from "./context/UpgradeModalContext";
 import "./App.css";
 
-const ProtectedRoute = ({ children }) => {
+// Protected route that also checks onboarding status
+const ProtectedRoute = ({ children, requireOnboarding = true }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
@@ -37,7 +39,36 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   
+  // Check if onboarding is required and not completed
+  if (requireOnboarding && !user.onboarding?.completed) {
+    return <Navigate to="/onboarding" replace />;
+  }
+  
   return children;
+};
+
+// Onboarding route - redirect to dashboard if already completed
+const OnboardingRoute = () => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // If onboarding already completed, go to dashboard
+  if (user.onboarding?.completed) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <OnboardingPage />;
 };
 
 function App() {
@@ -57,9 +88,12 @@ function App() {
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             
+            {/* Onboarding route */}
+            <Route path="/onboarding" element={<OnboardingRoute />} />
+            
             {/* Protected dashboard routes */}
             <Route path="/dashboard" element={
-              <ProtectedRoute>
+              <ProtectedRoute requireOnboarding={true}>
                 <DashboardLayout />
               </ProtectedRoute>
             }>

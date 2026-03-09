@@ -75,6 +75,15 @@ class ResetPasswordRequest(BaseModel):
 class GoogleSessionRequest(BaseModel):
     session_id: str
 
+class OnboardingData(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    completed: bool = False
+    user_type: Optional[str] = None
+    company_name: Optional[str] = None
+    team_size: Optional[str] = None
+    building_description: Optional[str] = None
+    primary_use_cases: Optional[List[str]] = None
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
@@ -82,6 +91,7 @@ class UserResponse(BaseModel):
     name: Optional[str] = None
     company_name: Optional[str] = None
     created_at: str
+    onboarding: Optional[OnboardingData] = None
 
 class APIKeyCreate(BaseModel):
     name: str
@@ -554,7 +564,8 @@ async def register(user_data: UserCreate, background_tasks: BackgroundTasks):
             email=user_data.email,
             name=None,  # Email signup doesn't provide name
             company_name=user_data.company_name,
-            created_at=now
+            created_at=now,
+            onboarding=None  # New users haven't completed onboarding yet
         )
     )
 
@@ -573,6 +584,18 @@ async def login(credentials: UserLogin):
     
     token = create_jwt_token(user["id"], user["email"])
     
+    # Parse onboarding data if exists
+    onboarding_data = None
+    if user.get("onboarding"):
+        onboarding_data = OnboardingData(
+            completed=user["onboarding"].get("completed", False),
+            user_type=user["onboarding"].get("user_type"),
+            company_name=user["onboarding"].get("company_name"),
+            team_size=user["onboarding"].get("team_size"),
+            building_description=user["onboarding"].get("building_description"),
+            primary_use_cases=user["onboarding"].get("primary_use_cases")
+        )
+    
     return TokenResponse(
         access_token=token,
         user=UserResponse(
@@ -580,7 +603,8 @@ async def login(credentials: UserLogin):
             email=user["email"],
             name=user.get("name"),
             company_name=user.get("company_name"),
-            created_at=user["created_at"]
+            created_at=user["created_at"],
+            onboarding=onboarding_data
         )
     )
 
@@ -861,12 +885,25 @@ async def reset_password(data: ResetPasswordRequest):
 
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(user: dict = Depends(get_current_user)):
+    # Parse onboarding data if exists
+    onboarding_data = None
+    if user.get("onboarding"):
+        onboarding_data = OnboardingData(
+            completed=user["onboarding"].get("completed", False),
+            user_type=user["onboarding"].get("user_type"),
+            company_name=user["onboarding"].get("company_name"),
+            team_size=user["onboarding"].get("team_size"),
+            building_description=user["onboarding"].get("building_description"),
+            primary_use_cases=user["onboarding"].get("primary_use_cases")
+        )
+    
     return UserResponse(
         id=user["id"],
         email=user["email"],
         name=user.get("name"),
         company_name=user.get("company_name"),
-        created_at=user["created_at"]
+        created_at=user["created_at"],
+        onboarding=onboarding_data
     )
 
 # ========== PROFILE COMPLETION ENDPOINT ==========
@@ -888,6 +925,66 @@ async def complete_profile(data: ProfileCompleteRequest, user: dict = Depends(ge
     logging.info(f"[PROFILE] User {user['email']} completed profile with company: {data.company_name}")
     
     return {"message": "Profile updated successfully", "company_name": data.company_name.strip()}
+
+# ========== ONBOARDING ENDPOINT ==========
+
+class OnboardingRequest(BaseModel):
+    user_type: str  # personal, business, builder, agency
+    company_name: Optional[str] = None
+    team_size: Optional[str] = None  # solo, 2-10, 11-50, 51-200, 200+
+    building_description: Optional[str] = None
+    primary_use_cases: Optional[List[str]] = None  # id_documents, invoices, bank_statements, contracts, other
+
+@api_router.post("/users/me/onboarding")
+async def save_onboarding(data: OnboardingRequest, user: dict = Depends(get_current_user)):
+    """Save user onboarding data for segmentation and personalization"""
+    
+    # Validate user_type
+    valid_types = ["personal", "business", "builder", "agency"]
+    if data.user_type not in valid_types:
+        raise HTTPException(status_code=400, detail=f"Invalid user_type. Must be one of: {valid_types}")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    onboarding_data = {
+        "completed": True,
+        "completed_at": now,
+        "user_type": data.user_type,
+        "company_name": data.company_name.strip() if data.company_name else None,
+        "team_size": data.team_size,
+        "building_description": data.building_description.strip() if data.building_description else None,
+        "primary_use_cases": data.primary_use_cases or [],
+        "version": "v1"
+    }
+    
+    # Update user document with onboarding data
+    update_fields = {"onboarding": onboarding_data}
+    
+    # Also update company_name at root level if provided (for backward compatibility)
+    if data.company_name and data.company_name.strip():
+        update_fields["company_name"] = data.company_name.strip()
+    
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": update_fields}
+    )
+    
+    logging.info(f"[ONBOARDING] User {user['email']} completed onboarding: type={data.user_type}, use_cases={data.primary_use_cases}")
+    
+    return {
+        "success": True,
+        "message": "Onboarding completed",
+        "onboarding": onboarding_data
+    }
+
+@api_router.get("/users/me/onboarding")
+async def get_onboarding_status(user: dict = Depends(get_current_user)):
+    """Get user's onboarding status"""
+    onboarding = user.get("onboarding", {})
+    return {
+        "completed": onboarding.get("completed", False),
+        "onboarding": onboarding
+    }
 
 # ========== API KEY ENDPOINTS ==========
 

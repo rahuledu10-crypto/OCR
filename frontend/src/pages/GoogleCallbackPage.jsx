@@ -3,13 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import ProfileCompletionModal from '../components/ProfileCompletionModal';
 
 const GoogleCallbackPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(true);
   const { loginWithToken } = useAuth();
 
@@ -55,17 +53,22 @@ const GoogleCallbackPage = () => {
           throw new Error('Failed to fetch user data');
         }
 
-        console.log('[GoogleCallback] Login successful, user:', user.email, 'isNewUser:', isNewUser);
+        console.log('[GoogleCallback] Login successful, user:', user.email, 'isNewUser:', isNewUser, 'onboarding:', user.onboarding);
 
-        // Handle new user - show profile completion modal
-        if (isNewUser) {
-          localStorage.removeItem('onboarding_completed');
-          setIsProcessing(false);
-          setShowProfileModal(true);
-          return; // Don't navigate yet, wait for profile completion
+        // Check if onboarding is needed
+        if (!user.onboarding?.completed) {
+          // New user or user who hasn't completed onboarding
+          if (isNewUser) {
+            toast.success('Welcome to ExtractAI!', {
+              description: 'Let\'s get you set up.'
+            });
+          }
+          console.log('[GoogleCallback] Redirecting to onboarding...');
+          navigate('/onboarding', { replace: true });
+          return;
         }
         
-        // Existing user - welcome back and go to dashboard
+        // Existing user with completed onboarding - go to dashboard
         toast.success('Welcome back!', {
           description: `Logged in as ${user.email}`
         });
@@ -84,11 +87,6 @@ const GoogleCallbackPage = () => {
 
     handleCallback();
   }, [searchParams, navigate, loginWithToken]);
-
-  const handleProfileComplete = () => {
-    setShowProfileModal(false);
-    navigate('/dashboard', { replace: true });
-  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -109,12 +107,6 @@ const GoogleCallbackPage = () => {
           </div>
         ) : null}
       </div>
-      
-      {/* Profile Completion Modal for new Google users */}
-      <ProfileCompletionModal 
-        isOpen={showProfileModal} 
-        onComplete={handleProfileComplete}
-      />
     </div>
   );
 };
