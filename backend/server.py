@@ -10,6 +10,7 @@ import json
 import re
 import httpx
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from pathlib import Path
@@ -42,11 +43,19 @@ JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'fallback-secret-key')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 72  # 3 days for better UX
 
-# SMTP Configuration
+# SMTP Configuration (supports Resend)
 SMTP_HOST = os.environ.get('SMTP_HOST', '')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
 SMTP_USER = os.environ.get('SMTP_USER', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+
+# If Resend API key is set, auto-configure SMTP for Resend
+if RESEND_API_KEY and not SMTP_HOST:
+    SMTP_HOST = 'smtp.resend.com'
+    SMTP_PORT = 587
+    SMTP_USER = 'resend'
+    SMTP_PASSWORD = RESEND_API_KEY
 
 # Google OAuth Configuration
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
@@ -747,16 +756,16 @@ async def send_reset_email(email: str, token: str):
     """Send password reset email"""
     if not SMTP_HOST or not SMTP_USER:
         logging.warning("[EMAIL] SMTP not configured, skipping reset email")
+        print("[EMAIL] SMTP not configured - set SMTP_HOST/SMTP_USER or RESEND_API_KEY")
         return
     
     try:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = "Reset Your ExtractAI Password"
-        msg['From'] = SMTP_USER
+        msg['From'] = os.environ.get('SMTP_FROM_EMAIL', SMTP_USER)
         msg['To'] = email
         
-        # TODO: Update this URL to your actual frontend URL
-        reset_url = f"https://extractai.io/reset-password?token={token}"
+        reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
         
         html = f"""
         <html>
@@ -780,25 +789,76 @@ async def send_reset_email(email: str, token: str):
         
         msg.attach(MIMEText(html, 'html'))
         
-        logging.info(f"[EMAIL] Attempting to send reset email to {email} via {SMTP_HOST}:{SMTP_PORT}")
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.send_message(msg)
+        logging.info(f"[EMAIL] Connecting to SMTP server {SMTP_HOST}:{SMTP_PORT}")
+        print(f"[EMAIL] Connecting to SMTP server {SMTP_HOST}:{SMTP_PORT}")
+        print(f"[EMAIL] SMTP_USER: {SMTP_USER}")
+        print(f"[EMAIL] SMTP_PASSWORD length: {len(SMTP_PASSWORD) if SMTP_PASSWORD else 0} chars")
+        print(f"[EMAIL] From: {msg['From']}, To: {email}")
         
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30)
+        print(f"[EMAIL] Connected to {SMTP_HOST}:{SMTP_PORT}")
+        
+        server.set_debuglevel(1)  # Enable SMTP debug output
+        
+        print("[EMAIL] Starting TLS...")
+        server.starttls()
+        print("[EMAIL] TLS started successfully")
+        
+        print(f"[EMAIL] Logging in as {SMTP_USER}...")
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        print("[EMAIL] Login successful")
+        
+        print(f"[EMAIL] Sending message to {email}...")
+        server.send_message(msg)
+        print(f"[EMAIL] Message sent successfully to {email}")
+        
+        server.quit()
         logging.info(f"[EMAIL] Reset email sent successfully to {email}")
+        
     except smtplib.SMTPAuthenticationError as e:
-        logging.error(f"[EMAIL ERROR] SMTP authentication failed for reset email to {email}: {e}")
-        print(f"[EMAIL ERROR] SMTP authentication failed: {e}")
+        error_msg = f"SMTP authentication failed: code={e.smtp_code}, msg={e.smtp_error}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] Full exception: {repr(e)}")
     except smtplib.SMTPConnectError as e:
-        logging.error(f"[EMAIL ERROR] SMTP connection failed for reset email to {email}: {e}")
-        print(f"[EMAIL ERROR] SMTP connection failed: {e}")
+        error_msg = f"SMTP connection failed: code={e.smtp_code}, msg={e.smtp_error}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] Full exception: {repr(e)}")
+    except smtplib.SMTPServerDisconnected as e:
+        error_msg = f"SMTP server disconnected unexpectedly: {e}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+    except smtplib.SMTPRecipientsRefused as e:
+        error_msg = f"Recipients refused: {e.recipients}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+    except smtplib.SMTPSenderRefused as e:
+        error_msg = f"Sender refused: code={e.smtp_code}, sender={e.sender}, msg={e.smtp_error}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+    except smtplib.SMTPDataError as e:
+        error_msg = f"SMTP data error: code={e.smtp_code}, msg={e.smtp_error}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
     except smtplib.SMTPException as e:
-        logging.error(f"[EMAIL ERROR] SMTP error sending reset email to {email}: {e}")
-        print(f"[EMAIL ERROR] SMTP error: {e}")
+        error_msg = f"SMTP error: {type(e).__name__}: {e}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+    except socket.timeout as e:
+        error_msg = f"SMTP connection timed out: {e}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+    except socket.error as e:
+        error_msg = f"Socket error: {type(e).__name__}: {e}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
     except Exception as e:
-        logging.error(f"[EMAIL ERROR] Unexpected error sending reset email to {email}: {type(e).__name__}: {e}")
-        print(f"[EMAIL ERROR] Unexpected error: {type(e).__name__}: {e}")
+        error_msg = f"Unexpected error: {type(e).__name__}: {e}"
+        logging.error(f"[EMAIL ERROR] {error_msg}")
+        print(f"[EMAIL ERROR] {error_msg}")
+        import traceback
+        print(f"[EMAIL ERROR] Traceback:\n{traceback.format_exc()}")
 
 @api_router.post("/auth/reset-password")
 async def reset_password(data: ResetPasswordRequest):
@@ -1472,6 +1532,58 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 # Include the router
+@api_router.get("/test-smtp")
+async def test_smtp_connection():
+    """Test SMTP connection - for debugging only"""
+    result = {
+        "smtp_host": SMTP_HOST,
+        "smtp_port": SMTP_PORT,
+        "smtp_user": SMTP_USER,
+        "smtp_password_set": bool(SMTP_PASSWORD),
+        "resend_api_key_set": bool(RESEND_API_KEY),
+        "connection_test": None,
+        "error": None
+    }
+    
+    if not SMTP_HOST:
+        result["error"] = "SMTP_HOST not configured"
+        return result
+    
+    try:
+        print(f"[SMTP TEST] Connecting to {SMTP_HOST}:{SMTP_PORT}...")
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30)
+        server.set_debuglevel(1)
+        
+        print("[SMTP TEST] Starting TLS...")
+        server.starttls()
+        
+        print(f"[SMTP TEST] Logging in as {SMTP_USER}...")
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        
+        print("[SMTP TEST] Login successful!")
+        server.quit()
+        
+        result["connection_test"] = "SUCCESS"
+    except smtplib.SMTPAuthenticationError as e:
+        result["connection_test"] = "FAILED"
+        result["error"] = f"Authentication failed: {e.smtp_code} - {e.smtp_error}"
+        print(f"[SMTP TEST ERROR] Auth failed: {e}")
+    except smtplib.SMTPConnectError as e:
+        result["connection_test"] = "FAILED"
+        result["error"] = f"Connection failed: {e.smtp_code} - {e.smtp_error}"
+        print(f"[SMTP TEST ERROR] Connect failed: {e}")
+    except socket.timeout:
+        result["connection_test"] = "FAILED"
+        result["error"] = "Connection timed out"
+        print("[SMTP TEST ERROR] Timeout")
+    except Exception as e:
+        result["connection_test"] = "FAILED"
+        result["error"] = f"{type(e).__name__}: {str(e)}"
+        print(f"[SMTP TEST ERROR] {type(e).__name__}: {e}")
+    
+    return result
+
+# Include router in app
 app.include_router(api_router)
 
 # CORS middleware
