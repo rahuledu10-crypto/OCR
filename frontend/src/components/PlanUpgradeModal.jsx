@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { 
@@ -11,6 +11,10 @@ import {
   Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+
+const API = process.env.REACT_APP_BACKEND_URL;
 
 const PLANS = [
   {
@@ -100,10 +104,27 @@ const PLANS = [
 const PlanUpgradeModal = ({ isOpen, onClose, currentPlan = 'free' }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { token, user } = useAuth();
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const handleSubscribe = async (planId) => {
     if (planId === currentPlan) {
       toast.info("You're already on this plan");
+      return;
+    }
+
+    if (planId === 'free') {
+      toast.info("You're already on the free plan");
       return;
     }
 
@@ -116,13 +137,100 @@ const PlanUpgradeModal = ({ isOpen, onClose, currentPlan = 'free' }) => {
     setLoading(true);
     setSelectedPlan(planId);
 
-    // Mock subscription - will be replaced with Razorpay
-    setTimeout(() => {
-      toast.success(`Plan upgrade to ${planId} initiated! Payment integration coming soon.`);
+    try {
+      // Step 1: Create order on backend
+      const orderResponse = await axios.post(
+        `${API}/api/subscription/create-order`,
+        { plan: planId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const orderData = orderResponse.data;
+      console.log('[Payment] Order created:', orderData);
+
+      // Step 2: Open Razorpay checkout
+      const options = {
+        key: orderData.razorpay_key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'ExtractAI',
+        description: `${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan Subscription`,
+        order_id: orderData.order_id,
+        handler: async function (response) {
+          console.log('[Payment] Razorpay response:', response);
+          
+          try {
+            // Step 3: Verify payment on backend
+            const verifyResponse = await axios.post(
+              `${API}/api/subscription/verify-payment`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                plan: planId
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            console.log('[Payment] Verification response:', verifyResponse.data);
+            
+            toast.success('Payment Successful!', {
+              description: verifyResponse.data.message
+            });
+            
+            // Reload the page to refresh user data
+            window.location.reload();
+          } catch (verifyError) {
+            console.error('[Payment] Verification failed:', verifyError);
+            toast.error('Payment verification failed', {
+              description: 'Please contact support if amount was deducted.'
+            });
+          }
+        },
+        prefill: {
+          email: user?.email || '',
+          contact: ''
+        },
+        notes: {
+          plan: planId
+        },
+        theme: {
+          color: '#6366f1'
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('[Payment] Checkout dismissed');
+            setLoading(false);
+            setSelectedPlan(null);
+          }
+        }
+      };
+
+      // Check if Razorpay is loaded
+      if (typeof window.Razorpay === 'undefined') {
+        throw new Error('Razorpay SDK not loaded');
+      }
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', function (response) {
+        console.error('[Payment] Payment failed:', response.error);
+        toast.error('Payment Failed', {
+          description: response.error.description || 'Please try again.'
+        });
+        setLoading(false);
+        setSelectedPlan(null);
+      });
+      
+      razorpay.open();
+
+    } catch (error) {
+      console.error('[Payment] Error:', error);
+      toast.error('Failed to initiate payment', {
+        description: error.response?.data?.detail || error.message || 'Please try again.'
+      });
       setLoading(false);
       setSelectedPlan(null);
-      onClose();
-    }, 1500);
+    }
   };
 
   const plansWithCurrent = PLANS.map(plan => ({
