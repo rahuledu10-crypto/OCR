@@ -48,6 +48,12 @@ SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
 SMTP_USER = os.environ.get('SMTP_USER', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://api.extractai.io/api/auth/google/callback')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://extractai.io')
+
 # Create the main app
 app = FastAPI(title="OCR API System", version="1.0.0")
 api_router = APIRouter(prefix="/api")
@@ -569,25 +575,70 @@ async def login(credentials: UserLogin):
     )
 
 # ========== GOOGLE OAUTH ENDPOINTS ==========
-# REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 
-@api_router.post("/auth/google/session")
-async def google_session(data: GoogleSessionRequest, background_tasks: BackgroundTasks):
-    """Exchange session_id from Emergent Auth for user data and JWT token"""
+@api_router.get("/auth/google")
+async def google_auth_redirect():
+    """Redirect user to Google OAuth consent screen"""
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+    
+    # Build Google OAuth URL
+    google_auth_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={GOOGLE_CLIENT_ID}&"
+        f"redirect_uri={GOOGLE_REDIRECT_URI}&"
+        "response_type=code&"
+        "scope=openid%20email%20profile&"
+        "access_type=offline&"
+        "prompt=consent"
+    )
+    
+    return RedirectResponse(url=google_auth_url)
+
+@api_router.get("/auth/google/callback")
+async def google_callback(code: str, background_tasks: BackgroundTasks):
+    """Handle Google OAuth callback, exchange code for user data"""
+    
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        logging.error("[GOOGLE AUTH] OAuth credentials not configured")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=oauth_not_configured")
+    
     try:
+        # Exchange authorization code for tokens
         async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-                headers={"X-Session-ID": data.session_id}
+            token_response = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": GOOGLE_REDIRECT_URI
+                }
             )
             
-            if response.status_code != 200:
-                raise HTTPException(status_code=401, detail="Invalid session")
+            if token_response.status_code != 200:
+                logging.error(f"[GOOGLE AUTH] Token exchange failed: {token_response.text}")
+                return RedirectResponse(url=f"{FRONTEND_URL}/login?error=token_exchange_failed")
             
-            google_data = response.json()
+            tokens = token_response.json()
+            access_token = tokens.get("access_token")
+            
+            # Get user info from Google
+            userinfo_response = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            
+            if userinfo_response.status_code != 200:
+                logging.error(f"[GOOGLE AUTH] User info fetch failed: {userinfo_response.text}")
+                return RedirectResponse(url=f"{FRONTEND_URL}/login?error=userinfo_failed")
+            
+            google_data = userinfo_response.json()
+    
     except httpx.RequestError as e:
-        logging.error(f"Google OAuth error: {e}")
-        raise HTTPException(status_code=500, detail="OAuth service unavailable")
+        logging.error(f"[GOOGLE AUTH] Request error: {e}")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=oauth_request_failed")
     
     email = google_data.get("email")
     name = google_data.get("name")
@@ -595,7 +646,10 @@ async def google_session(data: GoogleSessionRequest, background_tasks: Backgroun
     picture = google_data.get("picture")
     
     if not email:
-        raise HTTPException(status_code=400, detail="Email not provided by Google")
+        logging.error("[GOOGLE AUTH] No email returned from Google")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=no_email")
+    
+    logging.info(f"[GOOGLE AUTH] Processing login for {email}")
     
     # Check if user exists
     existing_user = await db.users.find_one({"email": email}, {"_id": 0})
@@ -610,6 +664,7 @@ async def google_session(data: GoogleSessionRequest, background_tasks: Backgroun
         
         user_id = existing_user["id"]
         is_new_user = False
+        logging.info(f"[GOOGLE AUTH] Existing user logged in: {email}")
     else:
         # Create new user
         user_id = str(uuid.uuid4())
@@ -641,24 +696,14 @@ async def google_session(data: GoogleSessionRequest, background_tasks: Backgroun
         )
         
         is_new_user = True
+        logging.info(f"[GOOGLE AUTH] New user created: {email}")
     
-    # Get updated user
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    
+    # Create JWT token
     token = create_jwt_token(user_id, email)
     
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "is_new_user": is_new_user,
-        "user": {
-            "id": user_id,
-            "email": email,
-            "company_name": user.get("company_name"),
-            "picture": picture,
-            "created_at": user["created_at"]
-        }
-    }
+    # Redirect to frontend with token
+    redirect_url = f"{FRONTEND_URL}/auth/google/callback?token={token}&is_new_user={str(is_new_user).lower()}"
+    return RedirectResponse(url=redirect_url)
 
 # ========== FORGOT PASSWORD ENDPOINTS ==========
 

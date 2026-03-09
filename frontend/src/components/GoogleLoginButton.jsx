@@ -1,21 +1,18 @@
 import { Button } from '../components/ui/button';
-import { toast } from 'sonner';
+
+const API = process.env.REACT_APP_BACKEND_URL;
 
 const GoogleLoginButton = () => {
   const handleGoogleLogin = () => {
-    // Google OAuth requires proper configuration after deployment
-    // Show a user-friendly message for now
-    toast.info('Google login will be available after deployment', {
-      description: 'Please use email/password to sign in for now.',
-      duration: 4000
-    });
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = `${API}/api/auth/google`;
   };
 
   return (
     <Button
       type="button"
       variant="outline"
-      className="w-full h-12 gap-3 text-base opacity-60 cursor-not-allowed"
+      className="w-full h-12 gap-3 text-base"
       onClick={handleGoogleLogin}
       data-testid="google-login-btn"
     >
@@ -38,7 +35,6 @@ const GoogleLoginButton = () => {
         />
       </svg>
       Continue with Google
-      <span className="ml-1 text-xs text-muted-foreground">(Coming soon)</span>
     </Button>
   );
 };

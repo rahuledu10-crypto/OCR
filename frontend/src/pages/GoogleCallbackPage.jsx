@@ -1,49 +1,53 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const GoogleCallbackPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login: authLogin } = useAuth();
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const handleCallback = async () => {
-      const sessionId = searchParams.get('session_id');
+      // Get token from URL (backend redirects here with token)
+      const token = searchParams.get('token');
+      const isNewUser = searchParams.get('is_new_user') === 'true';
       const errorParam = searchParams.get('error');
 
       if (errorParam) {
-        setError('Google login was cancelled or failed');
+        const errorMessages = {
+          'oauth_not_configured': 'Google login is not configured yet',
+          'token_exchange_failed': 'Failed to authenticate with Google',
+          'userinfo_failed': 'Failed to get user info from Google',
+          'oauth_request_failed': 'Connection to Google failed',
+          'no_email': 'No email provided by Google account'
+        };
+        setError(errorMessages[errorParam] || 'Google login failed');
         setTimeout(() => navigate('/login'), 3000);
         return;
       }
 
-      if (!sessionId) {
-        setError('Invalid callback - missing session');
+      if (!token) {
+        setError('Invalid callback - missing authentication token');
         setTimeout(() => navigate('/login'), 3000);
         return;
       }
 
       try {
-        // Exchange session_id for JWT token
-        const response = await axios.post(`${API}/auth/google/session`, {
-          session_id: sessionId
-        });
+        // Store token
+        localStorage.setItem('token', token);
 
-        const { access_token, user, is_new_user } = response.data;
-
-        // Store token and user data
-        localStorage.setItem('token', access_token);
+        // Decode token to get user info (JWT payload is base64 encoded)
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const user = {
+          id: payload.sub,
+          email: payload.email
+        };
         localStorage.setItem('user', JSON.stringify(user));
 
         // Clear onboarding flag for new users so they see onboarding
-        if (is_new_user) {
+        if (isNewUser) {
           localStorage.removeItem('onboarding_completed');
           toast.success('Welcome to ExtractAI! Your account is ready.');
         } else {
@@ -54,13 +58,13 @@ const GoogleCallbackPage = () => {
         navigate('/dashboard');
       } catch (err) {
         console.error('Google auth error:', err);
-        setError(err.response?.data?.detail || 'Authentication failed');
+        setError('Failed to process authentication');
         setTimeout(() => navigate('/login'), 3000);
       }
     };
 
     handleCallback();
-  }, [searchParams, navigate, authLogin]);
+  }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
