@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import SEO from '../components/SEO';
+import { OrganizationSchema, SoftwareApplicationSchema, WebSiteSchema } from '../components/JsonLd';
 import { 
   FileText, 
   Zap, 
@@ -181,6 +182,12 @@ const LandingPage = () => {
         description="Extract structured data from invoices, contracts, IDs and any document in seconds. Powerful OCR API with flexible pricing. Free to try."
         url="https://extractai.io/"
       />
+      
+      {/* JSON-LD Structured Data */}
+      <OrganizationSchema />
+      <SoftwareApplicationSchema />
+      <WebSiteSchema />
+      
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

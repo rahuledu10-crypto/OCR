@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import SEO from '../components/SEO';
+import { FAQPageSchema } from '../components/JsonLd';
 import { 
   FileText, 
   Check, 
@@ -119,6 +120,9 @@ const PricingPage = () => {
         description="Simple pricing for document extraction. Free tier available. Starter at ₹499/mo, Pro at ₹1999/mo. Scale as you grow."
         url="https://extractai.io/pricing"
       />
+      
+      {/* JSON-LD Structured Data for FAQs */}
+      <FAQPageSchema faqs={faqs} />
 
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
