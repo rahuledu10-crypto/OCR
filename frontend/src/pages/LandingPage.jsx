@@ -54,7 +54,7 @@ const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const copyCode = () => {
-    navigator.clipboard.writeText(`curl -X POST "https://api.ocrextract.io/api/v1/extract" \\
+    navigator.clipboard.writeText(`curl -X POST "https://api.extractai.io/api/v1/extract" \\
   -H "X-API-Key: your_api_key" \\
   -H "Content-Type: application/json" \\
   -d '{"image_base64": "...", "document_type": "auto"}'`);
@@ -426,7 +426,7 @@ const LandingPage = () => {
               </div>
               <pre className="p-4 text-sm font-mono overflow-x-auto">
                 <code className="text-muted-foreground">
-                  <span className="text-accent">curl</span> -X POST <span className="text-primary">"https://api.ocrextract.io/api/v1/extract"</span> \{'\n'}
+                  <span className="text-accent">curl</span> -X POST <span className="text-primary">"https://api.extractai.io/api/v1/extract"</span> \{'\n'}
                   {'  '}-H <span className="text-primary">"X-API-Key: your_api_key"</span> \{'\n'}
                   {'  '}-H <span className="text-primary">"Content-Type: application/json"</span> \{'\n'}
                   {'  '}-d <span className="text-primary">'{`{"image_base64": "...", "document_type": "auto"}`}'</span>
