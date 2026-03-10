@@ -194,7 +194,7 @@ const LandingPage = () => {
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
               <a href="#documents" className="text-muted-foreground hover:text-foreground transition-colors">Solutions</a>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+              <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
               <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">API Docs</Link>
             </div>
             <div className="flex items-center gap-3">
@@ -244,13 +244,13 @@ const LandingPage = () => {
                 >
                   Solutions
                 </a>
-                <a 
-                  href="#pricing" 
+                <Link 
+                  to="/pricing" 
                   className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Pricing
-                </a>
+                </Link>
                 <Link 
                   to="/docs" 
                   className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -634,7 +634,7 @@ const LandingPage = () => {
               <h4 className="font-heading font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
                 <li><Link to="/docs" className="hover:text-foreground transition-colors">API Documentation</Link></li>
                 <li><a href="#documents" className="hover:text-foreground transition-colors">Supported Documents</a></li>
               </ul>
