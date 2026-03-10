@@ -77,37 +77,37 @@ function App() {
       <UpgradeModalProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/docs" element={<PublicDocsPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            
-            {/* Onboarding route */}
-            <Route path="/onboarding" element={<OnboardingRoute />} />
-            
-            {/* Protected dashboard routes */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute requireOnboarding={true}>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<DashboardOverview />} />
-              <Route path="keys" element={<APIKeysPage />} />
-              <Route path="playground" element={<PlaygroundPage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="docs" element={<DocsPage />} />
-              <Route path="support" element={<SupportPage />} />
-            </Route>
+              {/* Public routes */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/docs" element={<PublicDocsPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              
+              {/* Onboarding route */}
+              <Route path="/onboarding" element={<OnboardingRoute />} />
+              
+              {/* Protected dashboard routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute requireOnboarding={true}>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<DashboardOverview />} />
+                <Route path="keys" element={<APIKeysPage />} />
+                <Route path="playground" element={<PlaygroundPage />} />
+                <Route path="analytics" element={<AnalyticsPage />} />
+                <Route path="docs" element={<DocsPage />} />
+                <Route path="support" element={<SupportPage />} />
+              </Route>
 
-            {/* 404 Catch-all route */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+              {/* 404 Catch-all route */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
           <Toaster position="top-right" richColors />
           <GlobalUpgradeModal />
         </BrowserRouter>

@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
+import SEO from './SEO';
 import { 
   FileText, 
   LayoutDashboard, 
@@ -75,6 +76,12 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      <SEO 
+        title="Dashboard — ExtractAI"
+        description="Manage your ExtractAI document extractions."
+        url="https://extractai.io/dashboard"
+        noIndex={true}
+      />
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 

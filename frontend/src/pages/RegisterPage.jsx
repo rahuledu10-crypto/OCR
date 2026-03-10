@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { toast } from 'sonner';
 import { FileText, Loader2, Check } from 'lucide-react';
 import GoogleLoginButton from '../components/GoogleLoginButton';
+import SEO from '../components/SEO';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -35,6 +36,11 @@ const RegisterPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <SEO 
+        title="Sign Up Free — ExtractAI"
+        description="Create your free ExtractAI account and start extracting data from documents instantly. No credit card required."
+        url="https://extractai.io/register"
+      />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.1)_0%,transparent_50%)]" />
       
       <motion.div

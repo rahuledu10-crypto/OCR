@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import SEO from '../components/SEO';
 import { 
   FileText, 
   Copy, 
@@ -65,6 +66,11 @@ console.log(result.name);            // "John Doe"`;
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="API Documentation — ExtractAI"
+        description="Integrate ExtractAI's document extraction API into your app. Simple REST API with Python, Node.js and more. Get started in minutes."
+        url="https://extractai.io/docs"
+      />
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import SEO from '../components/SEO';
 import { 
   FileText, 
   Zap, 
@@ -175,6 +176,11 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="ExtractAI — AI-Powered Document Data Extraction | OCR API"
+        description="Extract structured data from invoices, contracts, IDs and any document in seconds. Powerful OCR API with flexible pricing. Free to try."
+        url="https://extractai.io/"
+      />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

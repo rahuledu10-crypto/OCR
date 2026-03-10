@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const GoogleCallbackPage = () => {
   const navigate = useNavigate();
@@ -90,6 +91,12 @@ const GoogleCallbackPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
+      <SEO 
+        title="Authenticating — ExtractAI"
+        description="Completing authentication..."
+        url="https://extractai.io/auth/google/callback"
+        noIndex={true}
+      />
       <div className="text-center">
         {error ? (
           <div className="space-y-4">

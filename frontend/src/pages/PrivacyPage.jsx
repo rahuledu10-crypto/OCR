@@ -2,10 +2,16 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FileText, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import SEO from '../components/SEO';
 
 const PrivacyPage = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Privacy Policy — ExtractAI"
+        description="ExtractAI privacy policy. DPDPA 2023 compliant. Your data is secure and never used for training."
+        url="https://extractai.io/privacy"
+      />
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

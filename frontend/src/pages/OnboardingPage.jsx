@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -158,6 +159,12 @@ const OnboardingPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
+      <SEO 
+        title="Complete Your Profile — ExtractAI"
+        description="Complete your ExtractAI profile setup."
+        url="https://extractai.io/onboarding"
+        noIndex={true}
+      />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.1)_0%,transparent_50%)]" />
       
       <motion.div
