@@ -14,16 +14,58 @@
     <priority>0.9</priority>
   </url>
   
-  <!-- Authentication Pages -->
+  <!-- SEO Landing Pages -->
   <url>
-    <loc>https://extractai.io/login</loc>
+    <loc>https://extractai.io/gst-invoice-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/register</loc>
+    <loc>https://extractai.io/lorry-receipt-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://extractai.io/kyc-document-extraction</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://extractai.io/bank-statement-extraction</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://extractai.io/resume-extraction</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://extractai.io/invoice-extraction</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://extractai.io/aadhaar-extraction</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://extractai.io/pdf-data-extraction</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Authentication Pages -->
+  <url>
+    <loc>https://extractai.io/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://extractai.io/register</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://extractai.io/forgot-password</loc>

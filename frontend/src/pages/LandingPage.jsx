@@ -28,8 +28,25 @@ import {
   Home,
   Package,
   Menu,
-  X
+  X,
+  ChevronDown,
+  FileSpreadsheet,
+  User,
+  Building2,
+  FileScan
 } from 'lucide-react';
+
+// Solutions dropdown items
+const solutionsItems = [
+  { name: "GST Invoice Extraction", href: "/gst-invoice-extraction", icon: Receipt, description: "Extract GSTIN, HSN codes, tax amounts" },
+  { name: "Lorry Receipt/Bilty", href: "/lorry-receipt-extraction", icon: Truck, description: "Extract LR numbers, freight details" },
+  { name: "KYC Documents", href: "/kyc-document-extraction", icon: IdCard, description: "Aadhaar, PAN, Passport extraction" },
+  { name: "Bank Statements", href: "/bank-statement-extraction", icon: Landmark, description: "Transaction and balance extraction" },
+  { name: "Resume Parsing", href: "/resume-extraction", icon: User, description: "Skills, experience, education" },
+  { name: "Invoice Extraction", href: "/invoice-extraction", icon: FileSpreadsheet, description: "Line items, totals, vendor details" },
+  { name: "Aadhaar Cards", href: "/aadhaar-extraction", icon: CreditCard, description: "Name, DOB, address, Aadhaar number" },
+  { name: "PDF Extraction", href: "/pdf-data-extraction", icon: FileScan, description: "Any PDF with custom schema" }
+];
 
 const LandingPage = () => {
   const [copiedCode, setCopiedCode] = useState(false);
@@ -200,7 +217,37 @@ const LandingPage = () => {
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
-              <a href="#documents" className="text-muted-foreground hover:text-foreground transition-colors">Solutions</a>
+              
+              {/* Solutions Dropdown */}
+              <div className="relative group">
+                <button className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                  Solutions
+                  <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
+                </button>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <div className="bg-card/95 backdrop-blur-lg border border-border rounded-xl shadow-xl p-4 w-[480px] grid grid-cols-2 gap-2">
+                    {solutionsItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group/item"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover/item:bg-primary/20 transition-colors">
+                            <Icon className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{item.name}</div>
+                            <div className="text-xs text-muted-foreground">{item.description}</div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              
               <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
               <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">API Docs</Link>
             </div>
@@ -244,13 +291,24 @@ const LandingPage = () => {
                 >
                   Features
                 </a>
-                <a 
-                  href="#documents" 
-                  className="block py-2 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Solutions
-                </a>
+                
+                {/* Mobile Solutions Section */}
+                <div className="py-2">
+                  <div className="text-sm font-medium mb-2">Solutions</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {solutionsItems.slice(0, 4).map((item) => (
+                      <Link 
+                        key={item.href}
+                        to={item.href}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                
                 <Link 
                   to="/pricing" 
                   className="block py-2 text-muted-foreground hover:text-foreground transition-colors"

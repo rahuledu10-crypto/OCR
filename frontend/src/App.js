@@ -22,6 +22,19 @@ import SupportPage from "./pages/SupportPage";
 import GlobalUpgradeModal from "./components/GlobalUpgradeModal";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { UpgradeModalProvider } from "./context/UpgradeModalContext";
+
+// SEO Landing Pages
+import {
+  GSTInvoiceExtractionPage,
+  LorryReceiptExtractionPage,
+  KYCDocumentExtractionPage,
+  BankStatementExtractionPage,
+  ResumeExtractionPage,
+  InvoiceExtractionPage,
+  AadhaarExtractionPage,
+  PDFDataExtractionPage
+} from "./pages/seo";
+
 import "./App.css";
 
 // Protected route that also checks onboarding status
@@ -89,6 +102,16 @@ function App() {
               <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
+              
+              {/* SEO Landing Pages */}
+              <Route path="/gst-invoice-extraction" element={<GSTInvoiceExtractionPage />} />
+              <Route path="/lorry-receipt-extraction" element={<LorryReceiptExtractionPage />} />
+              <Route path="/kyc-document-extraction" element={<KYCDocumentExtractionPage />} />
+              <Route path="/bank-statement-extraction" element={<BankStatementExtractionPage />} />
+              <Route path="/resume-extraction" element={<ResumeExtractionPage />} />
+              <Route path="/invoice-extraction" element={<InvoiceExtractionPage />} />
+              <Route path="/aadhaar-extraction" element={<AadhaarExtractionPage />} />
+              <Route path="/pdf-data-extraction" element={<PDFDataExtractionPage />} />
               
               {/* Onboarding route */}
               <Route path="/onboarding" element={<OnboardingRoute />} />
