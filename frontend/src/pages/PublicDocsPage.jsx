@@ -69,7 +69,7 @@ console.log(result.name);            // "John Doe"`;
       <SEO 
         title="API Documentation — ExtractAI"
         description="Integrate ExtractAI's document extraction API into your app. Simple REST API with Python, Node.js and more. Get started in minutes."
-        url="https://extractai.io/docs"
+        url="https://www.extractai.io/docs"
       />
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">

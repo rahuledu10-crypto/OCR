@@ -17,8 +17,8 @@ export const OrganizationSchema = () => {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "ExtractAI",
-    "url": "https://extractai.io",
-    "logo": "https://extractai.io/og-image.png",
+    "url": "https://www.extractai.io",
+    "logo": "https://www.extractai.io/og-image.png",
     "contactPoint": {
       "@type": "ContactPoint",
       "email": "support@extractai.io",
@@ -52,7 +52,7 @@ export const WebSiteSchema = () => {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "ExtractAI",
-    "url": "https://extractai.io"
+    "url": "https://www.extractai.io"
   };
   return <JsonLd data={data} />;
 };

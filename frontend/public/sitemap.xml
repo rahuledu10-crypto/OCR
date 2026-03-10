@@ -2,92 +2,92 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Homepage -->
   <url>
-    <loc>https://extractai.io/</loc>
+    <loc>https://www.extractai.io/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   
   <!-- Pricing Page -->
   <url>
-    <loc>https://extractai.io/pricing</loc>
+    <loc>https://www.extractai.io/pricing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   
   <!-- SEO Landing Pages -->
   <url>
-    <loc>https://extractai.io/gst-invoice-extraction</loc>
+    <loc>https://www.extractai.io/gst-invoice-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/lorry-receipt-extraction</loc>
+    <loc>https://www.extractai.io/lorry-receipt-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/kyc-document-extraction</loc>
+    <loc>https://www.extractai.io/kyc-document-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/bank-statement-extraction</loc>
+    <loc>https://www.extractai.io/bank-statement-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/resume-extraction</loc>
+    <loc>https://www.extractai.io/resume-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/invoice-extraction</loc>
+    <loc>https://www.extractai.io/invoice-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/aadhaar-extraction</loc>
+    <loc>https://www.extractai.io/aadhaar-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://extractai.io/pdf-data-extraction</loc>
+    <loc>https://www.extractai.io/pdf-data-extraction</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <!-- Authentication Pages -->
   <url>
-    <loc>https://extractai.io/login</loc>
+    <loc>https://www.extractai.io/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://extractai.io/register</loc>
+    <loc>https://www.extractai.io/register</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://extractai.io/forgot-password</loc>
+    <loc>https://www.extractai.io/forgot-password</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <!-- Documentation -->
   <url>
-    <loc>https://extractai.io/docs</loc>
+    <loc>https://www.extractai.io/docs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   
   <!-- Legal Pages -->
   <url>
-    <loc>https://extractai.io/terms</loc>
+    <loc>https://www.extractai.io/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://extractai.io/privacy</loc>
+    <loc>https://www.extractai.io/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>

@@ -79,7 +79,7 @@ const DashboardLayout = () => {
       <SEO 
         title="Dashboard — ExtractAI"
         description="Manage your ExtractAI document extractions."
-        url="https://extractai.io/dashboard"
+        url="https://www.extractai.io/dashboard"
         noIndex={true}
       />
       {/* Mobile sidebar overlay */}

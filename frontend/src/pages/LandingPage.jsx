@@ -197,7 +197,7 @@ const LandingPage = () => {
       <SEO 
         title="ExtractAI — AI-Powered Document Data Extraction | OCR API"
         description="Extract structured data from invoices, contracts, IDs and any document in seconds. Powerful OCR API with flexible pricing. Free to try."
-        url="https://extractai.io/"
+        url="https://www.extractai.io/"
       />
       
       {/* JSON-LD Structured Data */}

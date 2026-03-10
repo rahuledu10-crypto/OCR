@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="Lorry Receipt & Bilty Data Extraction — ExtractAI"
       description="Extract LR numbers, consignor, consignee, freight details from lorry receipts and bilty documents automatically."
-      url="https://extractai.io/lorry-receipt-extraction"
+      url="https://www.extractai.io/lorry-receipt-extraction"
       heroTitle="Lorry Receipt & Bilty Extraction"
       heroSubtitle="Automatically extract LR numbers, consignor/consignee details, freight amounts, and tracking information from lorry receipts and bilty documents."
       documentType="Lorry Receipt"

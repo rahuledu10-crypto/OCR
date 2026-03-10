@@ -118,7 +118,7 @@ const PricingPage = () => {
       <SEO 
         title="Pricing — ExtractAI | Flexible Plans for Every Scale"
         description="Simple pricing for document extraction. Free tier available. Starter at ₹499/mo, Pro at ₹1999/mo. Scale as you grow."
-        url="https://extractai.io/pricing"
+        url="https://www.extractai.io/pricing"
       />
       
       {/* JSON-LD Structured Data for FAQs */}

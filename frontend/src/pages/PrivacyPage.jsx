@@ -10,7 +10,7 @@ const PrivacyPage = () => {
       <SEO 
         title="Privacy Policy — ExtractAI"
         description="ExtractAI privacy policy. DPDPA 2023 compliant. Your data is secure and never used for training."
-        url="https://extractai.io/privacy"
+        url="https://www.extractai.io/privacy"
       />
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">

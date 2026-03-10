@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="Aadhaar Card Data Extraction API — ExtractAI"
       description="Extract name, DOB, address and Aadhaar number from Aadhaar cards instantly. Secure, DPDPA compliant."
-      url="https://extractai.io/aadhaar-extraction"
+      url="https://www.extractai.io/aadhaar-extraction"
       heroTitle="Aadhaar Card Data Extraction"
       heroSubtitle="Automatically extract Aadhaar number, name, DOB, address, and QR code data from Aadhaar cards. Secure, DPDPA compliant, and UIDAI guidelines compatible."
       documentType="Aadhaar Card"

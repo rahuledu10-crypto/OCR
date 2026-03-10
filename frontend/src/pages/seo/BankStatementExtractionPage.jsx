@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="Bank Statement Data Extraction API — ExtractAI"
       description="Extract transactions, balances and account details from bank statements automatically. Supports all Indian bank formats."
-      url="https://extractai.io/bank-statement-extraction"
+      url="https://www.extractai.io/bank-statement-extraction"
       heroTitle="Bank Statement Data Extraction"
       heroSubtitle="Automatically extract transactions, balances, and account details from bank statements. Supports all major Indian banks including SBI, HDFC, ICICI, Axis, and more."
       documentType="Bank Statement"

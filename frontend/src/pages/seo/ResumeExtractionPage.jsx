@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="Resume & CV Data Extraction API — ExtractAI"
       description="Automatically parse resumes and CVs. Extract name, skills, experience, education in seconds. Perfect for HR teams and ATS systems."
-      url="https://extractai.io/resume-extraction"
+      url="https://www.extractai.io/resume-extraction"
       heroTitle="Resume & CV Data Extraction"
       heroSubtitle="Automatically parse resumes and extract structured candidate data. Perfect for HR teams, recruitment agencies, and ATS integrations."
       documentType="Resume"

@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="KYC Document Extraction API — ExtractAI"
       description="Automate KYC document data extraction. Extract data from Aadhaar, PAN, passports and more. Fast, accurate, secure."
-      url="https://extractai.io/kyc-document-extraction"
+      url="https://www.extractai.io/kyc-document-extraction"
       heroTitle="KYC Document Extraction & Automation"
       heroSubtitle="Automatically extract data from Aadhaar cards, PAN cards, passports, driving licenses, and voter IDs. Perfect for digital onboarding and identity verification."
       documentType="KYC Document"

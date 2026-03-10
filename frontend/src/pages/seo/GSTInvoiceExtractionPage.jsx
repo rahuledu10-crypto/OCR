@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="GST Invoice Data Extraction API — ExtractAI"
       description="Automatically extract GSTIN, invoice numbers, HSN codes, tax amounts from GST invoices. Fast, accurate OCR API. Free to try."
-      url="https://extractai.io/gst-invoice-extraction"
+      url="https://www.extractai.io/gst-invoice-extraction"
       heroTitle="GST Invoice Data Extraction"
       heroSubtitle="Automatically extract GSTIN, HSN codes, tax amounts, and all line items from GST invoices. Perfect for GST filing, reconciliation, and accounting automation."
       documentType="GST Invoice"

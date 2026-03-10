@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="PDF Data Extraction API — ExtractAI"
       description="Extract structured data from any PDF document using AI. Custom schema, fast API, supports all PDF formats."
-      url="https://extractai.io/pdf-data-extraction"
+      url="https://www.extractai.io/pdf-data-extraction"
       heroTitle="PDF Data Extraction API"
       heroSubtitle="Extract structured data from any PDF document using AI. Define custom extraction schemas or let our AI automatically identify and extract key information."
       documentType="PDF Document"

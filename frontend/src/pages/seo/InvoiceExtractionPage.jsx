@@ -33,7 +33,7 @@ print(response.json())`;
     <SEOLandingTemplate
       title="Invoice Data Extraction API — ExtractAI"
       description="Extract invoice numbers, line items, totals and vendor details from any invoice format automatically."
-      url="https://extractai.io/invoice-extraction"
+      url="https://www.extractai.io/invoice-extraction"
       heroTitle="Invoice Data Extraction"
       heroSubtitle="Automatically extract invoice numbers, line items, tax amounts, and vendor details from any invoice format. Perfect for accounts payable automation."
       documentType="Invoice"

@@ -65,7 +65,7 @@ const SEOLandingTemplate = ({
     "provider": {
       "@type": "Organization",
       "name": "ExtractAI",
-      "url": "https://extractai.io"
+      "url": "https://www.extractai.io"
     },
     "serviceType": "Document Data Extraction API"
   };

@@ -10,7 +10,7 @@ const TermsPage = () => {
       <SEO 
         title="Terms of Service — ExtractAI"
         description="ExtractAI terms of service. Read our terms before using the platform."
-        url="https://extractai.io/terms"
+        url="https://www.extractai.io/terms"
       />
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">

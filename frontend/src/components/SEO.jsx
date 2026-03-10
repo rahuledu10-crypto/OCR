@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const DEFAULT_OG_IMAGE = 'https://extractai.io/og-image.png';
+const DEFAULT_OG_IMAGE = 'https://www.extractai.io/og-image.png';
 const SITE_NAME = 'ExtractAI';
 const DEFAULT_TITLE = 'ExtractAI — AI-Powered Document Data Extraction';
 const DEFAULT_DESCRIPTION = 'Extract structured data from documents with AI-powered OCR.';

@@ -94,7 +94,7 @@ const GoogleCallbackPage = () => {
       <SEO 
         title="Authenticating — ExtractAI"
         description="Completing authentication..."
-        url="https://extractai.io/auth/google/callback"
+        url="https://www.extractai.io/auth/google/callback"
         noIndex={true}
       />
       <div className="text-center">

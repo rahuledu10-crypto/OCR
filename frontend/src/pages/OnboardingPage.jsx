@@ -162,7 +162,7 @@ const OnboardingPage = () => {
       <SEO 
         title="Complete Your Profile — ExtractAI"
         description="Complete your ExtractAI profile setup."
-        url="https://extractai.io/onboarding"
+        url="https://www.extractai.io/onboarding"
         noIndex={true}
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.1)_0%,transparent_50%)]" />
