@@ -16,13 +16,16 @@ import { toast } from 'sonner';
 import { 
   Upload, 
   FileImage, 
+  FileText,
   Loader2, 
   CheckCircle2,
   XCircle,
   Clock,
   Copy,
   Check,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -32,24 +35,35 @@ const PlaygroundPage = () => {
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [isPdf, setIsPdf] = useState(false);
   const [documentType, setDocumentType] = useState('auto');
+  const [mergePdfResults, setMergePdfResults] = useState(true);
   const [extracting, setExtracting] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [expandedPages, setExpandedPages] = useState({});
+
+  const isValidFileType = (file) => {
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+    return validTypes.includes(file.type);
+  };
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
+      if (!isValidFileType(file)) {
+        toast.error('Supported formats: JPG, PNG, PDF');
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('File size must be less than 10MB');
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error('File size must be less than 50MB');
         return;
       }
+      
+      const isPdfFile = file.type === 'application/pdf';
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setIsPdf(isPdfFile);
+      setPreviewUrl(isPdfFile ? null : URL.createObjectURL(file));
       setResult(null);
     }
   };
@@ -58,12 +72,15 @@ const PlaygroundPage = () => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
+      if (!isValidFileType(file)) {
+        toast.error('Supported formats: JPG, PNG, PDF');
         return;
       }
+      
+      const isPdfFile = file.type === 'application/pdf';
       setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setIsPdf(isPdfFile);
+      setPreviewUrl(isPdfFile ? null : URL.createObjectURL(file));
       setResult(null);
     }
   };
@@ -74,7 +91,7 @@ const PlaygroundPage = () => {
 
   const extractDocument = async () => {
     if (!selectedFile) {
-      toast.error('Please select an image first');
+      toast.error('Please select a file first');
       return;
     }
 
@@ -82,29 +99,54 @@ const PlaygroundPage = () => {
     setResult(null);
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result.split(',')[1];
-        
-        try {
-          const response = await axios.post(`${API}/playground/extract`, {
-            image_base64: base64,
-            document_type: documentType === 'auto' ? null : documentType
-          }, { headers: getAuthHeaders() });
-          
-          setResult(response.data);
-          toast.success('Document extracted successfully!');
-        } catch (error) {
-          const errorMessage = error.response?.data?.detail || 'Extraction failed';
-          toast.error(errorMessage);
-          setResult({ error: errorMessage });
-        } finally {
-          setExtracting(false);
+      if (isPdf) {
+        // PDF extraction - use FormData
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        if (documentType !== 'auto') {
+          formData.append('document_type', documentType);
         }
-      };
-      reader.readAsDataURL(selectedFile);
+        formData.append('merge', mergePdfResults.toString());
+
+        const response = await axios.post(`${API}/playground/extract/pdf`, formData, {
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        setResult({ ...response.data, isPdfResult: true });
+        toast.success(`PDF extracted successfully! ${response.data.pages_successful}/${response.data.total_pages} pages processed.`);
+      } else {
+        // Image extraction - use base64
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = reader.result.split(',')[1];
+          
+          try {
+            const response = await axios.post(`${API}/playground/extract`, {
+              image_base64: base64,
+              document_type: documentType === 'auto' ? null : documentType
+            }, { headers: getAuthHeaders() });
+            
+            setResult(response.data);
+            toast.success('Document extracted successfully!');
+          } catch (error) {
+            const errorMessage = error.response?.data?.detail || 'Extraction failed';
+            toast.error(errorMessage);
+            setResult({ error: errorMessage });
+          } finally {
+            setExtracting(false);
+          }
+        };
+        reader.readAsDataURL(selectedFile);
+        return; // Early return - setExtracting handled in reader.onload
+      }
     } catch (error) {
-      toast.error('Failed to read file');
+      const errorMessage = error.response?.data?.detail || 'Extraction failed';
+      toast.error(errorMessage);
+      setResult({ error: errorMessage });
+    } finally {
       setExtracting(false);
     }
   };
@@ -119,10 +161,221 @@ const PlaygroundPage = () => {
   const resetPlayground = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
+    setIsPdf(false);
     setResult(null);
+    setExpandedPages({});
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const togglePageExpand = (pageNum) => {
+    setExpandedPages(prev => ({
+      ...prev,
+      [pageNum]: !prev[pageNum]
+    }));
+  };
+
+  const renderPdfResult = () => {
+    if (!result || !result.isPdfResult) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-4"
+      >
+        {/* PDF Status */}
+        <div className="flex items-center gap-4 p-3 bg-accent/10 rounded-lg">
+          <CheckCircle2 className="w-5 h-5 text-accent" />
+          <div className="flex-1">
+            <p className="font-medium text-sm">PDF Processed Successfully</p>
+            <p className="text-xs text-muted-foreground">
+              {result.pages_successful}/{result.total_pages} pages • {result.credits_consumed} credits used
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            {result.processing_time_ms}ms
+          </div>
+        </div>
+
+        {/* Merged Data (if available) */}
+        {result.merged_data && Object.keys(result.merged_data).length > 0 && (
+          <div className="space-y-3">
+            <Label className="text-muted-foreground">Merged Data (All Pages)</Label>
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                  {result.merged_data.document_type?.toUpperCase() || 'DOCUMENT'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  from {result.merged_data.source_pages} pages
+                </span>
+              </div>
+              {result.merged_data.data && Object.entries(result.merged_data.data).map(([key, value]) => (
+                <div 
+                  key={key}
+                  className="flex items-start justify-between p-2 bg-background/50 rounded"
+                >
+                  <span className="text-sm text-muted-foreground capitalize">
+                    {key.replace(/_/g, ' ')}
+                  </span>
+                  <span className="text-sm font-mono text-right max-w-[60%] break-all">
+                    {typeof value === 'object' ? JSON.stringify(value, null, 1) : String(value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Page-by-Page Results */}
+        <div className="space-y-3">
+          <Label className="text-muted-foreground">Page-by-Page Results</Label>
+          <div className="space-y-2">
+            {result.pages?.map((page) => (
+              <div 
+                key={page.page_number}
+                className={`border rounded-lg overflow-hidden ${
+                  page.success ? 'border-border' : 'border-destructive/50'
+                }`}
+              >
+                <div 
+                  className="flex items-center justify-between p-3 bg-muted/30 cursor-pointer hover:bg-muted/50"
+                  onClick={() => togglePageExpand(page.page_number)}
+                >
+                  <div className="flex items-center gap-3">
+                    {expandedPages[page.page_number] ? (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    )}
+                    <span className="font-medium text-sm">Page {page.page_number}</span>
+                    {page.success ? (
+                      <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
+                        {page.document_type?.toUpperCase()}
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">
+                        FAILED
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {page.confidence && (
+                      <span>{(page.confidence * 100).toFixed(0)}%</span>
+                    )}
+                    <span>{page.processing_time_ms}ms</span>
+                  </div>
+                </div>
+                
+                {expandedPages[page.page_number] && (
+                  <div className="p-3 border-t border-border/50">
+                    {page.success ? (
+                      <div className="space-y-2">
+                        {page.extracted_data && Object.entries(page.extracted_data).map(([key, value]) => (
+                          <div 
+                            key={key}
+                            className="flex items-start justify-between p-2 bg-muted/20 rounded text-sm"
+                          >
+                            <span className="text-muted-foreground capitalize">
+                              {key.replace(/_/g, ' ')}
+                            </span>
+                            <span className="font-mono text-right max-w-[60%] break-all">
+                              {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-destructive">{page.error}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Raw JSON */}
+        <div className="space-y-2">
+          <Label className="text-muted-foreground">Raw Response</Label>
+          <pre className="p-4 bg-muted/50 rounded-lg overflow-x-auto text-xs font-mono max-h-48">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderImageResult = () => {
+    if (!result || result.isPdfResult) return null;
+
+    if (result.error) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <XCircle className="w-12 h-12 text-destructive mb-4" />
+          <p className="text-destructive font-medium">Extraction Failed</p>
+          <p className="text-sm text-muted-foreground mt-1">{result.error}</p>
+        </div>
+      );
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-4"
+      >
+        {/* Status */}
+        <div className="flex items-center gap-4 p-3 bg-accent/10 rounded-lg">
+          <CheckCircle2 className="w-5 h-5 text-accent" />
+          <div className="flex-1">
+            <p className="font-medium text-sm">Successfully extracted</p>
+            <p className="text-xs text-muted-foreground">
+              {result.document_type?.toUpperCase()} • {result.confidence ? `${(result.confidence * 100).toFixed(0)}% confidence` : 'Unknown confidence'}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            {result.processing_time_ms}ms
+          </div>
+        </div>
+
+        {/* Extracted Data */}
+        <div className="space-y-3">
+          <Label className="text-muted-foreground">Extracted Fields</Label>
+          {result.extracted_data && Object.keys(result.extracted_data).length > 0 ? (
+            <div className="space-y-2">
+              {Object.entries(result.extracted_data).map(([key, value]) => (
+                <div 
+                  key={key}
+                  className="flex items-start justify-between p-3 bg-muted/30 rounded-lg"
+                >
+                  <span className="text-sm text-muted-foreground capitalize">
+                    {key.replace(/_/g, ' ')}
+                  </span>
+                  <span className="text-sm font-mono text-right max-w-[60%] break-all">
+                    {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No data extracted</p>
+          )}
+        </div>
+
+        {/* Raw JSON */}
+        <div className="space-y-2">
+          <Label className="text-muted-foreground">Raw Response</Label>
+          <pre className="p-4 bg-muted/50 rounded-lg overflow-x-auto text-xs font-mono max-h-48">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
@@ -144,7 +397,7 @@ const PlaygroundPage = () => {
             {/* File Upload Area */}
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer
-                ${previewUrl ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/30'}`}
+                ${selectedFile ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/30'}`}
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
@@ -153,20 +406,29 @@ const PlaygroundPage = () => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
                 onChange={handleFileSelect}
                 className="hidden"
                 data-testid="file-input"
               />
               
-              {previewUrl ? (
+              {selectedFile ? (
                 <div className="space-y-4">
-                  <img 
-                    src={previewUrl} 
-                    alt="Preview" 
-                    className="max-h-48 mx-auto rounded-lg object-contain"
-                  />
+                  {isPdf ? (
+                    <div className="w-20 h-20 mx-auto rounded-lg bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-10 h-10 text-primary" />
+                    </div>
+                  ) : (
+                    <img 
+                      src={previewUrl} 
+                      alt="Preview" 
+                      className="max-h-48 mx-auto rounded-lg object-contain"
+                    />
+                  )}
                   <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
+                  {isPdf && (
+                    <p className="text-xs text-primary">PDF file selected</p>
+                  )}
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -189,7 +451,7 @@ const PlaygroundPage = () => {
                     <p className="text-sm text-muted-foreground">or click to browse</p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Supports: JPG, PNG, WEBP (max 10MB)
+                    Supported formats: JPG, PNG, PDF (max 50MB)
                   </p>
                 </div>
               )}
@@ -229,6 +491,22 @@ const PlaygroundPage = () => {
               </Select>
             </div>
 
+            {/* PDF Options */}
+            {isPdf && (
+              <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="merge-results"
+                  checked={mergePdfResults}
+                  onChange={(e) => setMergePdfResults(e.target.checked)}
+                  className="rounded border-border"
+                />
+                <Label htmlFor="merge-results" className="text-sm cursor-pointer">
+                  Merge results from all pages
+                </Label>
+              </div>
+            )}
+
             {/* Extract Button */}
             <Button
               className="w-full bg-primary hover:bg-primary/90"
@@ -239,7 +517,7 @@ const PlaygroundPage = () => {
               {extracting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Extracting...
+                  {isPdf ? 'Processing PDF...' : 'Extracting...'}
                 </>
               ) : (
                 <>
@@ -277,69 +555,12 @@ const PlaygroundPage = () => {
                   <div className="w-20 h-20 rounded-full border-4 border-muted" />
                   <div className="absolute inset-0 w-20 h-20 rounded-full border-4 border-t-primary animate-spin" />
                 </div>
-                <p className="text-muted-foreground mt-4">Processing document...</p>
+                <p className="text-muted-foreground mt-4">
+                  {isPdf ? 'Processing PDF pages...' : 'Processing document...'}
+                </p>
               </div>
             ) : result ? (
-              result.error ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <XCircle className="w-12 h-12 text-destructive mb-4" />
-                  <p className="text-destructive font-medium">Extraction Failed</p>
-                  <p className="text-sm text-muted-foreground mt-1">{result.error}</p>
-                </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
-                  {/* Status */}
-                  <div className="flex items-center gap-4 p-3 bg-accent/10 rounded-lg">
-                    <CheckCircle2 className="w-5 h-5 text-accent" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">Successfully extracted</p>
-                      <p className="text-xs text-muted-foreground">
-                        {result.document_type?.toUpperCase()} • {result.confidence ? `${(result.confidence * 100).toFixed(0)}% confidence` : 'Unknown confidence'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      {result.processing_time_ms}ms
-                    </div>
-                  </div>
-
-                  {/* Extracted Data */}
-                  <div className="space-y-3">
-                    <Label className="text-muted-foreground">Extracted Fields</Label>
-                    {result.extracted_data && Object.keys(result.extracted_data).length > 0 ? (
-                      <div className="space-y-2">
-                        {Object.entries(result.extracted_data).map(([key, value]) => (
-                          <div 
-                            key={key}
-                            className="flex items-start justify-between p-3 bg-muted/30 rounded-lg"
-                          >
-                            <span className="text-sm text-muted-foreground capitalize">
-                              {key.replace(/_/g, ' ')}
-                            </span>
-                            <span className="text-sm font-mono text-right max-w-[60%] break-all">
-                              {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No data extracted</p>
-                    )}
-                  </div>
-
-                  {/* Raw JSON */}
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground">Raw Response</Label>
-                    <pre className="p-4 bg-muted/50 rounded-lg overflow-x-auto text-xs font-mono max-h-48">
-                      {JSON.stringify(result, null, 2)}
-                    </pre>
-                  </div>
-                </motion.div>
-              )
+              result.isPdfResult ? renderPdfResult() : renderImageResult()
             ) : (
               <div className="flex flex-col items-center justify-center py-12">
                 <FileImage className="w-12 h-12 text-muted-foreground mb-4" />
