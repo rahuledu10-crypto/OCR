@@ -3,9 +3,10 @@ PDF Processing Module for ExtractAI
 ====================================
 Converts PDF pages to images and processes through the OCR pipeline.
 Supports multi-page PDFs with page-level error handling.
+Uses pypdfium2 (lightweight, fast to install).
 """
 
-import fitz  # PyMuPDF
+import pypdfium2 as pdfium
 import base64
 import io
 import logging
@@ -50,7 +51,7 @@ class PDFExtractionResult:
 
 def pdf_to_images(pdf_bytes: bytes, max_pages: int = MAX_PAGES, dpi: int = DEFAULT_DPI) -> List[Dict[str, Any]]:
     """
-    Convert PDF pages to base64-encoded PNG images.
+    Convert PDF pages to base64-encoded PNG images using pypdfium2.
     
     Args:
         pdf_bytes: Raw PDF file bytes
@@ -64,7 +65,7 @@ def pdf_to_images(pdf_bytes: bytes, max_pages: int = MAX_PAGES, dpi: int = DEFAU
     
     try:
         # Open PDF from bytes
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        doc = pdfium.PdfDocument(pdf_bytes)
         total_pages = len(doc)
         
         logger.info(f"[PDF] Opened PDF with {total_pages} pages")
@@ -73,19 +74,23 @@ def pdf_to_images(pdf_bytes: bytes, max_pages: int = MAX_PAGES, dpi: int = DEFAU
             logger.warning(f"[PDF] PDF has {total_pages} pages, limiting to {max_pages}")
             total_pages = max_pages
         
-        # Calculate zoom factor for desired DPI (default PDF is 72 DPI)
-        zoom = dpi / 72
-        matrix = fitz.Matrix(zoom, zoom)
+        # Scale factor for desired DPI (default PDF is 72 DPI)
+        scale = dpi / 72
         
         for page_num in range(total_pages):
             try:
                 page = doc[page_num]
                 
-                # Render page to pixmap (image)
-                pixmap = page.get_pixmap(matrix=matrix, alpha=False)
+                # Render page to bitmap
+                bitmap = page.render(scale=scale)
+                
+                # Convert to PIL Image
+                pil_image = bitmap.to_pil()
                 
                 # Convert to PNG bytes
-                png_bytes = pixmap.tobytes("png")
+                img_buffer = io.BytesIO()
+                pil_image.save(img_buffer, format='PNG')
+                png_bytes = img_buffer.getvalue()
                 
                 # Encode to base64
                 image_base64 = base64.b64encode(png_bytes).decode('utf-8')
@@ -93,8 +98,8 @@ def pdf_to_images(pdf_bytes: bytes, max_pages: int = MAX_PAGES, dpi: int = DEFAU
                 images.append({
                     "page_number": page_num + 1,  # 1-indexed
                     "image_base64": image_base64,
-                    "width": pixmap.width,
-                    "height": pixmap.height
+                    "width": pil_image.width,
+                    "height": pil_image.height
                 })
                 
                 logger.debug(f"[PDF] Converted page {page_num + 1}/{total_pages}")
@@ -276,7 +281,7 @@ def validate_pdf_size(file_bytes: bytes) -> bool:
 def get_pdf_page_count(file_bytes: bytes) -> int:
     """Get the number of pages in a PDF without full processing"""
     try:
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        doc = pdfium.PdfDocument(file_bytes)
         count = len(doc)
         doc.close()
         return count
