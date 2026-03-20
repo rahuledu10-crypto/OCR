@@ -20,8 +20,10 @@ colorlog==6.10.1
 cryptography==46.0.5
 distro==1.9.0
 dnspython==2.8.0
+easyocr==1.7.2
 ecdsa==0.19.1
 email-validator==2.3.0
+emergentintegrations==0.1.0
 fastapi==0.110.1
 fastuuid==0.14.0
 filelock==3.24.2
@@ -64,6 +66,7 @@ markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 mccabe==0.7.0
 mdurl==0.1.2
+modelscope==1.34.0
 motor==3.3.1
 mpmath==1.3.0
 multidict==6.7.1
@@ -74,8 +77,13 @@ ninja==1.13.0
 numpy==2.4.2
 oauthlib==3.3.1
 openai==1.99.9
+opencv-contrib-python==4.10.0.84
+opencv-python-headless==4.13.0.92
 opt-einsum==3.3.0
 packaging==26.0
+paddleocr==3.4.0
+paddlepaddle==3.2.2
+paddlex==3.4.2
 pandas==3.0.1
 passlib==1.7.4
 pathspec==1.0.4
@@ -100,8 +108,10 @@ pyflakes==3.4.0
 Pygments==2.19.2
 PyJWT==2.11.0
 pymongo==4.5.0
+PyMuPDF==1.27.2
 pyparsing==3.3.2
 pypdfium2==5.5.0
+pytesseract==0.3.13
 pytest==9.0.2
 python-bidi==0.6.7
 python-dateutil==2.9.0.post0
@@ -121,6 +131,9 @@ rsa==4.9.1
 ruamel.yaml==0.19.1
 s3transfer==0.16.0
 s5cmd==0.2.0
+safetensors==0.7.0
+scikit-image==0.26.0
+scipy==1.17.0
 shapely==2.1.2
 shellingham==1.5.4
 six==1.17.0
@@ -132,6 +145,8 @@ tenacity==9.1.4
 tifffile==2026.2.20
 tiktoken==0.12.0
 tokenizers==0.22.2
+torch==2.10.0
+torchvision==0.25.0
 tqdm==4.67.3
 typer==0.24.0
 typer-slim==0.24.0

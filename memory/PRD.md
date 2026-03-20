@@ -54,6 +54,7 @@ Single API call to extract structured data from any supported document.
 |---------|--------|
 | Single document extraction | ✅ Live |
 | Batch extraction (up to 10 docs) | ✅ Live |
+| **PDF extraction (multi-page)** | ✅ Live |
 | 17+ document types | ✅ Live |
 | API key management | ✅ Live |
 | Usage analytics | ✅ Live |
@@ -584,6 +585,51 @@ Response 200:
   ],
   "processing_time_ms": 4500
 }
+```
+
+#### PDF Extraction (NEW)
+```http
+POST /api/v1/extract/pdf
+X-API-Key: ocr_xxxxxxxxxxxxxx
+Content-Type: multipart/form-data
+
+Form Data:
+- file: <PDF file>
+- document_type: "invoice" (optional)
+- merge: true/false (optional, default: false)
+
+Response 200:
+{
+  "document_id": "uuid",
+  "total_pages": 5,
+  "pages_processed": 5,
+  "pages_successful": 5,
+  "pages_failed": 0,
+  "credits_consumed": 5,
+  "processing_time_ms": 12500,
+  "pages": [
+    {
+      "page_number": 1,
+      "success": true,
+      "document_type": "invoice",
+      "extracted_data": { ... },
+      "confidence": 0.92,
+      "processing_time_ms": 2500
+    },
+    ...
+  ],
+  "merged_data": {  // Only if merge=true
+    "document_type": "invoice",
+    "source_pages": 5,
+    "data": { ... combined fields ... }
+  },
+  "timestamp": "2025-03-20T12:00:00Z"
+}
+
+Limits:
+- Max pages: 50
+- Max file size: 50MB
+- Credits: 1 per page processed
 ```
 
 #### Playground Extraction (JWT Auth)

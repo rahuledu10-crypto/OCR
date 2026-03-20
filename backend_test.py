@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Dict, Optional
 
 class OCRAPITester:
-    def __init__(self, base_url="https://gemini-ocr.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://pdf-ocr-processing.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.jwt_token = None
         self.api_key = None

@@ -1,199 +1,167 @@
 <analysis>**original_problem_statement:**
-The user wants to build a commercial OCR (Optical Character Recognition) API. The initial goal was to extract data from ID documents. The project has since evolved into a full-fledged SaaS platform named ExtractAI with a disruptive pricing model aimed at the Indian market.
+The user wants to add PDF support to the ExtractAI backend. When a PDF file is uploaded, it should be converted to images and processed through the existing Gemini OCR pipeline. This is a critical feature for a new vertical product, LedgrAI, which will serve Chartered Accountant (CA) firms in India by processing financial documents received via WhatsApp and email.
 
-PRODUCT REQUIREMENTS:
--   **Core Functionality**: An OCR API that can extract structured data from a wide variety of documents, including Indian IDs, invoices, cheques, bank statements, legal documents, and more.
--   **Technology**: Use a powerful and cost-effective OCR engine (settled on Gemini Flash via ).
--   **User Management**: Support both email/password and Google Social Login. Include features like registration, login, forgot password, and welcome emails.
--   **Billing & Subscriptions**: Implement a multi-tier pricing model (Free, Starter, Growth, Enterprise) with usage limits. Integrate a payment gateway (Razorpay) for subscriptions and top-ups.
--   **Developer Experience**: Provide a user-friendly dashboard, an API playground, public API documentation, and downloadable SDKs (Python/Node.js).
--   **UX & Onboarding**: A professional, conversion-focused landing page. A simple 3-step onboarding flow for new users to guide them to their first API call.
--   **Advanced Features**: Support for batch processing and webhooks for asynchronous notifications.
+The core ExtractAI application is a commercial OCR SaaS platform with a disruptive pricing model for the Indian market. It includes user management (JWT & Google OAuth), multi-tier subscription plans (mocked Razorpay), a developer dashboard, API playground, and extensive public-facing and SEO-optimized pages.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A sophisticated, near production-ready full-stack OCR SaaS application (ExtractAI).
--   **Backend (FastAPI)**:
-    -   OCR engine powered by **Gemini Flash** via the  library.
-    -   User authentication with JWT (email/password) and direct **Google OAuth 2.0**.
-    -   Transactional emails for welcome and password reset via the **Resend API**.
-    -   API key management, multi-tier plans, batch processing, and webhook stubs.
-    -   Placeholder integration for **Razorpay** billing.
-    -   Deployment configurations for Railway (, cleaned ).
--   **Frontend (React)**:
-    -   A professional landing page, user dashboard, API playground, and public documentation.
-    -   Complete mocked billing UI: Plan Upgrade modal, usage meters, and wallet display.
-    -   A dedicated Support page with a contact form and FAQ.
-    -   Terms of Service and Privacy Policy pages.
-    -   A global handler that shows the upgrade modal on 429 (rate limit) errors.
-    -   Extensive UI/UX polish, including empty states and mobile responsiveness.
+A near production-ready, full-stack OCR SaaS application (ExtractAI).
+-   **Backend (FastAPI)**: Features user authentication (JWT & Google OAuth), API key management, rate limiting stubs, and an OCR engine using Gemini Flash. It has endpoints for user registration, login, profile completion, a new onboarding flow, and mocked payment subscription.
+-   **Frontend (React)**: A highly-polished application with a main landing page, a user dashboard, and numerous public-facing pages for documentation, legal policies, and pricing. It features a comprehensive, single-screen user onboarding flow post-signup. The frontend is heavily optimized for SEO with dynamic meta tags, JSON-LD structured data, a , , and 8 dedicated landing pages for specific document extraction use cases.
 
 **Last working item**:
--   **Last item agent was working:** The user reported that after Google OAuth login/signup, the user is incorrectly redirected to the signup page instead of the dashboard. The agent was tasked with fixing this flow, ensuring a redirect to , and handling the user experience for new Google signups who need to provide additional details (like a company name) that are part of the standard email signup form.
--   **Status:** IN PROGRESS
+-   **Last item agent was working:** The agent had just started working on adding native PDF support to the backend. The user wants PDF files uploaded to  and  to be automatically converted into images using  and processed by the existing Gemini OCR pipeline. The agent was in the initial investigation phase, having reviewed  and  to understand the current workflow before implementation.
+-   **Status:** NOT STARTED
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** both
+-   **Which testing method agent to use?** backend testing agent
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1 (P0):** Fix the broken Google OAuth post-login redirection and user onboarding flow.
--   **Issue 2 (P1):** Differentiate Google button text on Login vs. Register pages.
+-   **Issue 1 (P0):** Implement PDF support in the backend.
+-   **Issue 2 (P1):** Google OAuth flow is blocked pending user-provided credentials.
 
 **Issues Detail:**
--   **Issue 1: Fix broken Google OAuth flow**
-    -   **Attempted fixes:** The agent identified that  sets  but does not properly update the , leading to a stale UI state. A plan was devised to fix this and introduce a profile completion step for new Google users.
+-   **Issue 1: Implement PDF support in the backend**
+    -   **Attempted fixes:** None. The agent was in the discovery phase.
     -   **Next debug checklist:**
-        1.  Modify  to correctly call a login function in  after receiving the token, ensuring a state update and redirect to .
-        2.  In the backend , enhance the  endpoint to return a flag (e.g., ) if the user is signing up for the first time.
-        3.  Create a  component to collect the  and any other required fields from new Google users.
-        4.  In the frontend, after a successful Google login, check for the  flag and trigger the  before the user can proceed.
-        5.  Create a new backend endpoint (e.g., ) for submitting the modal's data.
-    -   **Why fix this issue and what will be achieved with the fix?** The Google login, a critical user acquisition channel, is currently broken. Fixing it will provide a seamless user experience and ensure all necessary user data is collected, aligning it with the standard email signup flow.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on other issue:** None
-
--   **Issue 2: Differentiate Google button text**
-    -   **Attempted fixes:** None. This is part of the same task as Issue 1.
-    -   **Next debug checklist:**
-        1.  Modify the  to accept a prop (e.g.,  or ).
-        2.  In , use the button with the text Sign up with Google.
-        3.  In , use the button with the text Continue with Google.
-    -   **Why fix this issue and what will be achieved with the fix?** Provides clearer user context on the action they are about to perform.
+        1.  Install  and add it to .
+        2.  Modify the  and  endpoints in .
+        3.  Add logic to detect if the uploaded file is a PDF (check content-type or extension).
+        4.  If it's a PDF, use  to read the file bytes in memory.
+        5.  Iterate through the PDF pages, converting each page to a PNG image.
+        6.  For each image, call the existing  function.
+        7.  Aggregate the results from all pages into a single, cohesive JSON response, maintaining the existing API contract.
+        8.  Handle multi-page processing and potential errors for individual pages gracefully.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical feature for the LedgrAI vertical, which relies on processing PDF documents from clients. It also makes the core ExtractAI platform more robust and versatile.
     -   **Status:** NOT STARTED
     -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Blocked on other issue:** None
+
+-   **Issue 2: Google OAuth flow is blocked**
+    -   **Attempted fixes:** The agent has fully implemented and tested the Google OAuth code. However, the flow cannot be completed in the preview environment because the necessary credentials (, ) are missing from the  file.
+    -   **Next debug checklist:** The agent needs to inform the user that the functionality is ready but requires them to provide the OAuth credentials for it to work.
+    -   **Why fix this issue and what will be achieved with the fix?** This will enable a key user authentication method.
+    -   **Status:** BLOCKED (Pending user credentials)
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both
     -   **Blocked on other issue:** None
 
 **In progress Task List**:
 None.
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks:**
-    -   **(P0) Activate Razorpay Billing**: Wire the frontend upgrade modal to the backend  endpoints and enable with production keys.
-    -   **(P1) Enforce Usage Limits**: Implement logic in  on the OCR endpoint () to check user's plan and block requests that exceed the usage quota.
+-   **(P1) Activate Razorpay Billing**: Wire the frontend upgrade modal to the backend  endpoints with production keys.
+-   **(P2) Enforce Usage Limits**: Implement logic in  on the OCR endpoint () to check the user's plan and block requests exceeding the quota.
+-   **(P2) Personalize Dashboard/Emails**: Use the data collected from the new onboarding flow to personalize the dashboard welcome message and welcome email content.
 -   **Future Tasks:**
     -   Publish Python/Node.js SDKs to PyPI and npm.
     -   Implement WhatsApp integration for notifications.
     -   Add a webhook management UI to the user dashboard.
+    -   Add structured data (JSON-LD) for rich snippets for the SEO landing pages.
 
 **Completed work in this session**
--   **Google OAuth Rework**: Replaced Emergent-managed OAuth with a direct, standard Google OAuth 2.0 implementation.
--   **Email Service Rework**: Replaced  with the **Resend API** for more reliable email sending, with improved error logging.
--   **Dependency & Build Fixes**:
-    -   Replaced  with  for the OCR engine, removing a private dependency.
-    -   Created , , and  for production deployment.
-    -   Cleaned  by removing over a dozen legacy OCR packages (, , , etc.), significantly reducing image size.
--   **Full Quality Audit & UX Polish**:
-    -   Created dedicated pages for **Support**, **Terms of Service**, and **Privacy Policy**.
-    -   Added a mobile-responsive hamburger menu to the landing page.
-    -   Fixed dozens of minor bugs and inconsistencies across all pages (links, text, validation, etc.).
-    -   Added a favicon and corrected all page titles.
--   **Feature Enhancements**:
-    -   Implemented a global 429 error handler to automatically open the plan upgrade modal.
-    -   Added rich empty states with illustrations to the Analytics, API Keys, and Dashboard pages.
-    -   Updated all API documentation (public and dashboard) to include **Batch Processing**.
--   **Branding & Cleanup**:
-    -   Removed the Made with Emergent badge from the frontend.
-    -   Replaced all hardcoded  placeholder domains with production-ready  domains.
+-   **Google OAuth & Onboarding Overhaul**:
+    -   Fixed the post-login redirect for Google OAuth.
+    -   Implemented a Profile Completion modal for new Google users.
+    -   **Replaced the modal with a superior, full-screen, single-page onboarding flow** triggered for all new users, collecting , , , and .
+-   **Razorpay Payment Integration**: Fully wired the frontend  to the backend Razorpay endpoints ( and ). The flow is functional and awaits live API keys.
+-   **Comprehensive SEO Implementation**:
+    -   **Meta Tags**: Implemented a custom  component using  (after abandoning a buggy  implementation) to add unique titles, descriptions, canonicals, and OG/Twitter tags to all public pages.
+    -   ** & **: Created and populated these files in the  directory.
+    -   **Dedicated Pricing Page**: Created a new standalone  page, moved content from the homepage, and updated all navigation links.
+    -   **JSON-LD Structured Data**: Added , , , and  schemas for Google rich snippets.
+    -   **8 SEO Landing Pages**: Created 8 dedicated, content-rich landing pages for specific use cases (e.g., , ), complete with a reusable template and a new Solutions dropdown in the main navigation.
+-   **Site-wide Updates**:
+    -   Updated the Calendly booking link.
+    -   Updated all canonical URLs and sitemap entries to use  (with ).
+    -   Added Google Analytics 4 (GA4) tracking script to .
+    -   Fixed an incorrect API domain in a  example on the homepage.
 
 **Earlier issues found/mentioned but not fixed**
 None.
 
 **Known issue recurrence from previous fork**
-N/A
+-   **Issue recurrence in previous fork**: The Google OAuth flow is non-functional without user-provided credentials.
+-   **Recurrence count**: 1
+-   **Status**: BLOCKED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI, MongoDB (motor)
+-   **Backend**: FastAPI, MongoDB (motor),  (planned)
 -   **Frontend**: React, TailwindCSS, Shadcn/UI
--   **OCR Engine**: Gemini Flash (via )
--   **Authentication**: JWT, Google OAuth 2.0 (direct implementation)
--   **Emails**: Resend API (via )
--   **Payments**: Razorpay (mocked)
--   **Deployment**: Railway (via  and Nixpacks)
+-   **SEO**: Manual meta tag management via a  hook, , , JSON-LD.
+-   **Authentication**: JWT, Google OAuth 2.0
+-   **Payments**: Razorpay (wired up, but using placeholder keys)
 
 **key DB schema**
--   **users**: 
--   **api_keys**: 
--   **password_reset_tokens**: 
+-   **users**:  (new  object added)
 
 **changes in tech stack**
--   **Email Service**: Migrated from Python's  to the **Resend API**.
--   **OCR Engine**: Migrated from  to the standard **** library.
--   **Google Authentication**: Migrated from Emergent-managed OAuth to a **direct Google OAuth 2.0** implementation.
+-    was installed but subsequently removed in favor of a custom -based solution for SEO meta tags due to persistent bugs.
 
 **All files of reference**
--   : Core logic for auth (Google/JWT), Resend emails, and API endpoints.
--   : OCR logic, now using .
--   : Key file for fixing the current OAuth issue.
--   : Where the Sign up with Google button resides.
--   : Where the Continue with Google button resides.
--   : Needs to be properly updated by the Google callback.
--   : Defines the production build and start commands for Railway.
--   : Significantly cleaned list of dependencies.
+-   : The main file to modify for PDF support in the  and  endpoints.
+-   : The existing OCR logic that will be called by the new PDF processing flow.
+-   : Directory containing the 8 new SEO landing pages.
+-   : The reusable template for the new landing pages.
+-   : The new user onboarding screen.
+-   : The custom component for managing SEO meta tags.
+-   : The sitemap containing all 16 public URLs.
+-   : The file defining crawler rules.
 
 **Areas that need refactoring**:
--    is still large and could be split into multiple router files (e.g., , ) under a  directory for better organization.
+-    continues to grow and could be split into multiple router files (e.g., , , ) under a  directory for better maintainability.
 
 **key api endpoints**
--   , 
--    (New: Initiates redirect to Google)
--    (New: Handles callback from Google)
--   , 
--   , 
+-   : Target for adding single PDF processing logic.
+-   : Target for adding batch PDF processing logic.
+-   : New endpoint to save user onboarding data.
 
 **Critical Info for New Agent**
--   **Immediate Priority**: Your first task is to fix the Google OAuth flow as detailed in the Issues Detail section. This is a critical bug blocking a core feature.
--   **Onboarding Flow**: A key part of the fix is to design the experience for new Google signups. The user wants to collect the , so you will likely need to implement a complete your profile modal that appears after the first Google login.
--   **Deployment Context**: The user is actively preparing to deploy on Railway. All changes should be production-ready and mindful of the deployment environment (, environment variables, etc.).
--   **Required Credentials**: The app now requires several API keys to function:  (for Gemini),  (for emails), and , ,  (for auth).
+-   **Your immediate task is to implement PDF support in the backend.** This is the user's latest and most critical request. Follow the plan outlined in Issues Detail.
+-   **Do not attempt to fix the Google OAuth flow.** The code is correct. The flow is blocked because the user has not provided the necessary API credentials. If the user asks about it, simply state that the feature is ready and waiting for their credentials to be added to the  file.
+-   The context for the PDF feature is LedgrAI, a new vertical product. This context is important for making implementation decisions.
 
 **documents and test reports created in this job**
 -    (updated multiple times)
--   Multiple test reports from the testing agent (e.g., ).
+-    (Google OAuth fix)
+-    (Razorpay wiring)
+-    (Onboarding flow)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asked to replace  with Resend API for emails. (DONE)
-2.  **User**: Asked for a fix to the Google OAuth callback redirecting to the wrong page. (CURRENT TASK)
-3.  **User**: Pointed out that the Google signup flow misses collecting the  and asked for a thoughtful fix. (CURRENT TASK)
-4.  **User**: Asked to log SMTP errors. (DONE, then made obsolete by Resend migration)
-5.  **User**: Asked to replace Emergent OAuth with direct Google OAuth. (DONE)
-6.  **User**: Asked about Google OAuth implementation details. (Answered)
-7.  **User**: Asked about Razorpay implementation details. (Answered)
-8.  **User**: Asked about email implementation details. (Answered)
-9.  **User**: Asked for help downloading the logo. (DONE)
-10. **User**: Asked to update docs with batch processing info. (DONE)
+1.  **User**: Add 8 SEO landing pages for specific use cases. (DONE)
+2.  **User**: Update all site URLs to use  (with www). (DONE)
+3.  **User**: Fix canonical URL, OG image, and an API URL in a  example on the homepage. (DONE)
+4.  **User**: Add Google Analytics 4 to the app. (DONE)
+5.  **User**: **Add PDF support to the backend OCR engine.** (CURRENT TASK)
 
 **Project Health Check:**
--   **Healthy**: The application is feature-complete and has undergone extensive quality audits.
--   **Mocked**: Razorpay billing is implemented in the UI but the backend endpoints are not yet connected for live payments.
+-   **Healthy**: The application is robust, feature-rich, and has undergone significant SEO and UX enhancements.
+-   **Mocked**: Razorpay billing is fully integrated but requires live API keys to process real payments. Google OAuth is fully integrated but requires user-provided credentials to function.
 
 **3rd Party Integrations**
 -   **Google Gemini Flash (OCR)** — requires User .
--   **Google OAuth 2.0 (Auth)** — requires User , , .
+-   **Google OAuth 2.0 (Auth)** — requires User , , . (Currently unconfigured)
 -   **Resend (Transactional Email)** — requires User .
--   **Razorpay (Payments)** — requires User API Key (currently mocked).
+-   **Razorpay (Payments)** — requires User API Key (currently using a placeholder).
+-   **Google Analytics 4** — Integrated with ID .
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (multiple times, with all tests passing).
+-   **Testing agent used after significant changes:** YES (for Google OAuth fix, Razorpay wiring, and the new Onboarding flow).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None
--   **Known regressions:** The Google OAuth flow was broken during the migration from Emergent-managed auth to direct auth.
+-   **Known regressions:** None.
 
 **Credentials to test flow:**
-The following environment variables are required in  for full functionality:
--   
--   
--   
+The following are still required for full functionality:
 -   
 -   
 -   
 -   
 
 **What agent forgot to execute**
-The agent has a plan to fix the user's latest request (Google OAuth flow and button text) but has not yet implemented the code changes.</analysis>
+The agent has not forgotten any tasks. It was in the process of starting the user's latest request for PDF support when the session ended.</analysis>

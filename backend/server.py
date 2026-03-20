@@ -25,6 +25,11 @@ from ocr_engine import extract_document as ocr_extract_document, ExtractionResul
 from plans import PLANS, PAYG_PRICE_PER_EXTRACTION
 from payments import create_order, verify_payment_signature, PLAN_PRICES, IS_TEST_MODE
 from webhooks import send_webhook, create_extraction_webhook_payload, create_batch_webhook_payload
+from pdf_processor import (
+    pdf_to_images, is_pdf, is_pdf_content_type, 
+    merge_extraction_results, validate_pdf_size, get_pdf_page_count,
+    PageResult, PDFExtractionResult, MAX_PAGES, MAX_FILE_SIZE_MB
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -203,6 +208,31 @@ class PlanInfoResponse(BaseModel):
     extractions_per_month: Optional[int]
     rate_limit_per_minute: int
     features: List[str]
+
+# ========== PDF EXTRACTION MODELS ==========
+
+class PDFPageResult(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    page_number: int
+    success: bool
+    document_type: Optional[str] = None
+    extracted_data: Optional[Dict[str, Any]] = None
+    confidence: Optional[float] = None
+    error: Optional[str] = None
+    processing_time_ms: int = 0
+
+class PDFExtractionResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    document_id: str
+    total_pages: int
+    pages_processed: int
+    pages_successful: int
+    pages_failed: int
+    credits_consumed: int
+    processing_time_ms: int
+    pages: List[PDFPageResult]
+    merged_data: Optional[Dict[str, Any]] = None
+    timestamp: str
 
 # ========== HELPER FUNCTIONS ==========
 
@@ -1099,6 +1129,183 @@ async def extract_document(request: OCRRequest, api_key: dict = Depends(validate
         })
         raise
 
+# ========== PDF EXTRACTION ENDPOINT ==========
+
+@api_router.post("/v1/extract/pdf", response_model=PDFExtractionResponse)
+async def extract_pdf_document(
+    file: UploadFile = File(...),
+    document_type: Optional[str] = None,
+    merge: bool = False,
+    api_key: dict = Depends(validate_api_key)
+):
+    """
+    Extract data from PDF documents.
+    
+    - Converts each PDF page to an image and processes through OCR
+    - Returns page-by-page results with optional merged data
+    - Credits consumed = number of pages processed
+    - Max 50 pages per PDF, max 50MB file size
+    
+    Query params:
+    - document_type: Hint for document type (invoice, bank_statement, etc.)
+    - merge: If true, includes merged_data combining all pages
+    """
+    import time
+    start_time = time.time()
+    
+    document_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    
+    # Read file content
+    file_bytes = await file.read()
+    
+    # Validate file is PDF
+    if not is_pdf(file_bytes) and not is_pdf_content_type(file.content_type or ""):
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Only PDF files are accepted. For images, use /api/v1/extract endpoint."
+        )
+    
+    # Validate file size
+    if not validate_pdf_size(file_bytes):
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE_MB}MB"
+        )
+    
+    # Get page count for validation
+    page_count = get_pdf_page_count(file_bytes)
+    if page_count == 0:
+        raise HTTPException(status_code=400, detail="Could not read PDF or PDF is empty")
+    
+    if page_count > MAX_PAGES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"PDF has {page_count} pages. Maximum is {MAX_PAGES} pages per request."
+        )
+    
+    # Convert PDF to images
+    try:
+        images = pdf_to_images(file_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Process each page
+    page_results: List[PDFPageResult] = []
+    pages_successful = 0
+    pages_failed = 0
+    
+    for img_data in images:
+        page_num = img_data["page_number"]
+        page_start = time.time()
+        
+        if img_data.get("error") or not img_data.get("image_base64"):
+            # Page conversion failed
+            page_results.append(PDFPageResult(
+                page_number=page_num,
+                success=False,
+                error=img_data.get("error", "Failed to convert page to image"),
+                processing_time_ms=0
+            ))
+            pages_failed += 1
+            continue
+        
+        try:
+            # Extract using existing OCR engine
+            result = await extract_document_info(img_data["image_base64"], document_type)
+            
+            page_processing_time = int((time.time() - page_start) * 1000)
+            
+            page_results.append(PDFPageResult(
+                page_number=page_num,
+                success=True,
+                document_type=result.get("document_type", "unknown"),
+                extracted_data=result.get("extracted_data", {}),
+                confidence=result.get("confidence", 0),
+                processing_time_ms=page_processing_time
+            ))
+            pages_successful += 1
+            
+        except Exception as e:
+            page_processing_time = int((time.time() - page_start) * 1000)
+            page_results.append(PDFPageResult(
+                page_number=page_num,
+                success=False,
+                error=str(e),
+                processing_time_ms=page_processing_time
+            ))
+            pages_failed += 1
+    
+    total_processing_time = int((time.time() - start_time) * 1000)
+    
+    # Generate merged data if requested
+    merged_data = None
+    if merge:
+        # Convert PDFPageResult to PageResult for merge function
+        page_result_objects = [
+            PageResult(
+                page_number=p.page_number,
+                success=p.success,
+                document_type=p.document_type,
+                extracted_data=p.extracted_data,
+                confidence=p.confidence,
+                error=p.error,
+                processing_time_ms=p.processing_time_ms
+            )
+            for p in page_results
+        ]
+        merged_data = merge_extraction_results(page_result_objects)
+    
+    # Credits = pages processed (successful or not, as we attempted OCR)
+    credits_consumed = len(images)
+    
+    # Store the request
+    request_doc = {
+        "id": document_id,
+        "api_key_id": api_key["id"],
+        "user_id": api_key["user_id"],
+        "type": "pdf_extraction",
+        "filename": file.filename,
+        "total_pages": len(images),
+        "pages_successful": pages_successful,
+        "pages_failed": pages_failed,
+        "credits_consumed": credits_consumed,
+        "processing_time_ms": total_processing_time,
+        "timestamp": now.isoformat(),
+        "success": pages_successful > 0
+    }
+    await db.ocr_requests.insert_one(request_doc)
+    
+    # Log individual page results for analytics
+    for page_result in page_results:
+        await db.ocr_requests.insert_one({
+            "id": str(uuid.uuid4()),
+            "parent_document_id": document_id,
+            "api_key_id": api_key["id"],
+            "user_id": api_key["user_id"],
+            "type": "pdf_page",
+            "page_number": page_result.page_number,
+            "document_type": page_result.document_type or "unknown",
+            "confidence": page_result.confidence or 0,
+            "processing_time_ms": page_result.processing_time_ms,
+            "timestamp": now.isoformat(),
+            "success": page_result.success,
+            "error": page_result.error
+        })
+    
+    return PDFExtractionResponse(
+        document_id=document_id,
+        total_pages=len(images),
+        pages_processed=len(images),
+        pages_successful=pages_successful,
+        pages_failed=pages_failed,
+        credits_consumed=credits_consumed,
+        processing_time_ms=total_processing_time,
+        pages=page_results,
+        merged_data=merged_data,
+        timestamp=now.isoformat()
+    )
+
 # ========== PLAYGROUND ENDPOINT (for dashboard testing) ==========
 
 @api_router.post("/playground/extract", response_model=OCRResponse)
@@ -1134,6 +1341,147 @@ async def playground_extract(request: OCRRequest, user: dict = Depends(get_curre
         extracted_data=result.get("extracted_data", {}),
         confidence=result.get("confidence", 0),
         processing_time_ms=processing_time,
+        timestamp=now.isoformat()
+    )
+
+@api_router.post("/playground/extract/pdf", response_model=PDFExtractionResponse)
+async def playground_extract_pdf(
+    file: UploadFile = File(...),
+    document_type: Optional[str] = None,
+    merge: bool = False,
+    user: dict = Depends(get_current_user)
+):
+    """PDF extraction for testing in the dashboard (no API key required)"""
+    import time
+    start_time = time.time()
+    
+    document_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    
+    # Read file content
+    file_bytes = await file.read()
+    
+    # Validate file is PDF
+    if not is_pdf(file_bytes) and not is_pdf_content_type(file.content_type or ""):
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Only PDF files are accepted."
+        )
+    
+    # Validate file size
+    if not validate_pdf_size(file_bytes):
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE_MB}MB"
+        )
+    
+    # Get page count for validation
+    page_count = get_pdf_page_count(file_bytes)
+    if page_count == 0:
+        raise HTTPException(status_code=400, detail="Could not read PDF or PDF is empty")
+    
+    if page_count > MAX_PAGES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"PDF has {page_count} pages. Maximum is {MAX_PAGES} pages."
+        )
+    
+    # Convert PDF to images
+    try:
+        images = pdf_to_images(file_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Process each page
+    page_results: List[PDFPageResult] = []
+    pages_successful = 0
+    pages_failed = 0
+    
+    for img_data in images:
+        page_num = img_data["page_number"]
+        page_start = time.time()
+        
+        if img_data.get("error") or not img_data.get("image_base64"):
+            page_results.append(PDFPageResult(
+                page_number=page_num,
+                success=False,
+                error=img_data.get("error", "Failed to convert page"),
+                processing_time_ms=0
+            ))
+            pages_failed += 1
+            continue
+        
+        try:
+            result = await extract_document_info(img_data["image_base64"], document_type)
+            page_processing_time = int((time.time() - page_start) * 1000)
+            
+            page_results.append(PDFPageResult(
+                page_number=page_num,
+                success=True,
+                document_type=result.get("document_type", "unknown"),
+                extracted_data=result.get("extracted_data", {}),
+                confidence=result.get("confidence", 0),
+                processing_time_ms=page_processing_time
+            ))
+            pages_successful += 1
+            
+        except Exception as e:
+            page_processing_time = int((time.time() - page_start) * 1000)
+            page_results.append(PDFPageResult(
+                page_number=page_num,
+                success=False,
+                error=str(e),
+                processing_time_ms=page_processing_time
+            ))
+            pages_failed += 1
+    
+    total_processing_time = int((time.time() - start_time) * 1000)
+    
+    # Generate merged data if requested
+    merged_data = None
+    if merge:
+        page_result_objects = [
+            PageResult(
+                page_number=p.page_number,
+                success=p.success,
+                document_type=p.document_type,
+                extracted_data=p.extracted_data,
+                confidence=p.confidence,
+                error=p.error,
+                processing_time_ms=p.processing_time_ms
+            )
+            for p in page_results
+        ]
+        merged_data = merge_extraction_results(page_result_objects)
+    
+    credits_consumed = len(images)
+    
+    # Store the request
+    await db.ocr_requests.insert_one({
+        "id": document_id,
+        "user_id": user["id"],
+        "type": "pdf_extraction",
+        "filename": file.filename,
+        "total_pages": len(images),
+        "pages_successful": pages_successful,
+        "pages_failed": pages_failed,
+        "credits_consumed": credits_consumed,
+        "processing_time_ms": total_processing_time,
+        "timestamp": now.isoformat(),
+        "success": pages_successful > 0,
+        "is_playground": True
+    })
+    
+    return PDFExtractionResponse(
+        document_id=document_id,
+        total_pages=len(images),
+        pages_processed=len(images),
+        pages_successful=pages_successful,
+        pages_failed=pages_failed,
+        credits_consumed=credits_consumed,
+        processing_time_ms=total_processing_time,
+        pages=page_results,
+        merged_data=merged_data,
         timestamp=now.isoformat()
     )
 
