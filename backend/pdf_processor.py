@@ -135,43 +135,50 @@ def is_pdf_content_type(content_type: str) -> bool:
 def merge_extraction_results(pages: List[PageResult]) -> Dict[str, Any]:
     """
     Merge extraction results from multiple pages into a single response.
-    Intelligently combines data based on document type patterns.
+    Simple merge: combine all extracted_data dicts, arrays are combined, 
+    scalar values from later pages override earlier ones.
     """
+    logger.info(f"[MERGE] Called with {len(pages)} pages")
+    
     if not pages:
+        logger.info("[MERGE] No pages provided")
         return {}
     
     successful_pages = [p for p in pages if p.success and p.extracted_data]
+    logger.info(f"[MERGE] Found {len(successful_pages)} successful pages with data")
+    
     if not successful_pages:
+        logger.info("[MERGE] No successful pages with extracted_data")
         return {}
     
     # Detect dominant document type
     doc_types = [p.document_type for p in successful_pages if p.document_type]
     dominant_type = max(set(doc_types), key=doc_types.count) if doc_types else "unknown"
+    logger.info(f"[MERGE] Dominant document type: {dominant_type}")
     
-    merged = {
+    # Simple merge: combine all data
+    merged_data = {}
+    for page in successful_pages:
+        data = page.extracted_data or {}
+        for key, value in data.items():
+            if key in merged_data:
+                # If both are lists, combine them
+                if isinstance(merged_data[key], list) and isinstance(value, list):
+                    merged_data[key].extend(value)
+                # Otherwise, later value overrides
+                else:
+                    merged_data[key] = value
+            else:
+                merged_data[key] = value
+    
+    result = {
         "document_type": dominant_type,
         "source_pages": len(successful_pages),
-        "data": {}
+        "data": merged_data
     }
     
-    # Different merge strategies based on document type
-    if dominant_type in ["invoice", "purchase_order", "delivery_challan"]:
-        # For multi-page invoices: combine line items, keep header from page 1
-        merged["data"] = _merge_invoice_data(successful_pages)
-    
-    elif dominant_type == "bank_statement":
-        # For bank statements: combine all transactions
-        merged["data"] = _merge_bank_statement(successful_pages)
-    
-    elif dominant_type == "prescription":
-        # For prescriptions: combine medicines from all pages
-        merged["data"] = _merge_prescription_data(successful_pages)
-    
-    else:
-        # Default: combine all unique fields, prefer first occurrence
-        merged["data"] = _merge_generic(successful_pages)
-    
-    return merged
+    logger.info(f"[MERGE] Result has {len(merged_data)} fields")
+    return result
 
 
 def _merge_invoice_data(pages: List[PageResult]) -> Dict[str, Any]:

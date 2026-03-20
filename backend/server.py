@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request, BackgroundTasks, Response
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, UploadFile, File, Request, BackgroundTasks, Response, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
@@ -1134,8 +1134,8 @@ async def extract_document(request: OCRRequest, api_key: dict = Depends(validate
 @api_router.post("/v1/extract/pdf", response_model=PDFExtractionResponse)
 async def extract_pdf_document(
     file: UploadFile = File(...),
-    document_type: Optional[str] = None,
-    merge: bool = False,
+    document_type: Optional[str] = Query(None),
+    merge: bool = Query(False),
     api_key: dict = Depends(validate_api_key)
 ):
     """
@@ -1152,6 +1152,9 @@ async def extract_pdf_document(
     """
     import time
     start_time = time.time()
+    
+    # Debug log
+    logging.info(f"[PDF API] merge={merge}, document_type={document_type}")
     
     document_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
@@ -1347,13 +1350,16 @@ async def playground_extract(request: OCRRequest, user: dict = Depends(get_curre
 @api_router.post("/playground/extract/pdf", response_model=PDFExtractionResponse)
 async def playground_extract_pdf(
     file: UploadFile = File(...),
-    document_type: Optional[str] = None,
-    merge: bool = False,
+    document_type: Optional[str] = Query(None),
+    merge: bool = Query(False),
     user: dict = Depends(get_current_user)
 ):
     """PDF extraction for testing in the dashboard (no API key required)"""
     import time
     start_time = time.time()
+    
+    # Debug log
+    logging.info(f"[PDF PLAYGROUND] merge={merge}, document_type={document_type}")
     
     document_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
@@ -1452,7 +1458,9 @@ async def playground_extract_pdf(
             )
             for p in page_results
         ]
+        logging.info(f"[PDF PLAYGROUND] Calling merge with {len(page_result_objects)} page objects")
         merged_data = merge_extraction_results(page_result_objects)
+        logging.info(f"[PDF PLAYGROUND] Merge result: {merged_data}")
     
     credits_consumed = len(images)
     
