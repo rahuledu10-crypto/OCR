@@ -100,15 +100,21 @@ const PlaygroundPage = () => {
 
     try {
       if (isPdf) {
-        // PDF extraction - use FormData
+        // PDF extraction - use FormData with query params for merge
         const formData = new FormData();
         formData.append('file', selectedFile);
         if (documentType !== 'auto') {
           formData.append('document_type', documentType);
         }
-        formData.append('merge', mergePdfResults.toString());
 
-        const response = await axios.post(`${API}/playground/extract/pdf`, formData, {
+        // Build URL with query params
+        const params = new URLSearchParams();
+        if (mergePdfResults) {
+          params.append('merge', 'true');
+        }
+        const url = `${API}/playground/extract/pdf${params.toString() ? '?' + params.toString() : ''}`;
+
+        const response = await axios.post(url, formData, {
           headers: {
             ...getAuthHeaders(),
             'Content-Type': 'multipart/form-data'
@@ -176,6 +182,27 @@ const PlaygroundPage = () => {
     }));
   };
 
+  // Known document types - these get green tags, unknown gets orange
+  const knownDocumentTypes = [
+    'aadhaar', 'pan', 'dl', 'driving_license', 'passport', 'voter_id',
+    'invoice', 'purchase_order', 'delivery_challan', 'eway_bill',
+    'cheque', 'bank_statement', 'salary_slip',
+    'rent_agreement', 'property_doc',
+    'prescription', 'lab_report',
+    'gst_registration', 'gst_registration_annexure_b', 'gst_certificate',
+    'itr', 'form_16', 'balance_sheet', 'profit_loss'
+  ];
+
+  const isKnownDocType = (docType) => {
+    if (!docType) return false;
+    return knownDocumentTypes.includes(docType.toLowerCase()) || docType.toLowerCase() !== 'unknown';
+  };
+
+  const formatDocType = (docType) => {
+    if (!docType) return 'UNKNOWN';
+    return docType.toUpperCase().replace(/_/g, ' ');
+  };
+
   const renderPdfResult = () => {
     if (!result || !result.isPdfResult) return null;
 
@@ -206,8 +233,12 @@ const PlaygroundPage = () => {
             <Label className="text-muted-foreground">Merged Data (All Pages)</Label>
             <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
-                  {result.merged_data.document_type?.toUpperCase() || 'DOCUMENT'}
+                <span className={`text-xs font-medium px-2 py-1 rounded ${
+                  isKnownDocType(result.merged_data.document_type)
+                    ? 'text-primary bg-primary/10'
+                    : 'text-orange-600 bg-orange-500/10'
+                }`}>
+                  {formatDocType(result.merged_data.document_type) || 'DOCUMENT'}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   from {result.merged_data.source_pages} pages
@@ -253,8 +284,12 @@ const PlaygroundPage = () => {
                     )}
                     <span className="font-medium text-sm">Page {page.page_number}</span>
                     {page.success ? (
-                      <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
-                        {page.document_type?.toUpperCase()}
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        isKnownDocType(page.document_type) 
+                          ? 'bg-accent/20 text-accent' 
+                          : 'bg-orange-500/20 text-orange-600'
+                      }`}>
+                        {formatDocType(page.document_type)}
                       </span>
                     ) : (
                       <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">
